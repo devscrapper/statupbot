@@ -1310,7 +1310,7 @@ module Visitors
       # si la page courante est EngineSearch alors il faut soumettre la recherche (nominal)
       # si la page courante est Captcha alors il ne faut soumettre la recherche car cela veut dire la résolution du captcha
       # à afficher la page de résults issue de la soumission de la recherche réalisée avant l'apparition du captcha.
-      unless @current_page.is_a?(Pages::EngineSearch)
+      if @current_page.is_a?(Pages::EngineSearch)
         # on fait la recherche de keywords
         begin
           #--------------------------------------------------------------------------------------------------------
@@ -1419,7 +1419,7 @@ module Visitors
       # si la page courante est EngineSearch alors il faut soumettre la recherche (nominal)
       # si la page courante est Captcha alors il ne faut soumettre la recherche car cela veut dire la résolution du captcha
       # à afficher la page de résults issue de la soumission de la recherche réalisée avant l'apparition du captcha.
-      unless @current_page.is_a?(Pages::EngineSearch)
+      if @current_page.is_a?(Pages::EngineSearch)
         # on fait la recherche de keywords
         begin
           #--------------------------------------------------------------------------------------------------------
