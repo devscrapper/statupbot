@@ -285,7 +285,9 @@ module Sahi
       try_count = 0
       max_try_count = 3
       begin
+
         check_proxy
+
       rescue Exception => e
         try_count+=1
         @@logger.an_event.debug "#{e.message}, try #{try_count}"
@@ -361,21 +363,43 @@ module Sahi
       exist
     end
 
+    def reload
+      fetch("location.reload(true)")
+    end
+
     def take_screenshot(to_absolute_path)
       #TODO update for linux
       begin
-        Win32::Screenshot::Take.of(:window,
-                                   hwnd: @browser_window_handle).write!(to_absolute_path)
+   Win32::Screenshot::Take.of(:desktop).write!(to_absolute_path)
+
+
+#        Win32::Screenshot::Take.of(:window,
+ #                                  hwnd: @browser_window_handle).write!(to_absolute_path)
       rescue Exception => e
         Win32::Screenshot::Take.of(:desktop).write!(to_absolute_path)
       else
       end
     end
 
+
+    def take_area_screenshot(to_absolute_path, coord)
+      #TODO update for linux
+      begin
+ Win32::Screenshot::Take.of(:desktop, area: coord).write!(to_absolute_path)
+
+  #      Win32::Screenshot::Take.of(:window,
+   #                                hwnd: @browser_window_handle, area: coord).write!(to_absolute_path)
+      rescue Exception => e
+        Win32::Screenshot::Take.of(:desktop, area: coord).write!(to_absolute_path)
+      else
+      end
+    end
     def resize (width, height)
       #TODO update for linux
       Window.from_handle(@browser_window_handle).resize(width,
                                                         height)
+      Window.from_handle(@browser_window_handle).move(0,
+                                                      0)
     end
 
     private

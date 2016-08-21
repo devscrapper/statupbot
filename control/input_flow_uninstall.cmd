@@ -1,1 +1,0 @@
-ruby run_as_service.rb uninstall input_flow

@@ -1,8 +1,8 @@
 #referentiels
 source "http://rubygems.org"
-source "http://gems.github.com"
 
 
+gem 'mini_magick' #, '~> 4.5', '>= 4.5.1' W32Screenshot utilise la version mini_magick (~> 4.3.0) x86-mingw32
 gem "eventmachine", '1.0.8'
 gem 'em-http-request', '1.0.3'
 gem 'em-http-server', '~> 0.1.8'
@@ -35,10 +35,9 @@ gem 'win32-window', '~> 0.2.0.pre'
 
 #group :development
 group :development do
-  # gem 'capistrano', '~> 3.1'
-  # gem 'capistrano-bundler', '~> 1.1.2'
-  gem "capistrano-windows-server"
-  gem 'sshkit'
+  gem 'capistrano-rvm'
+  gem 'capistrano', '~> 3.1'
+  gem 'sshkit-sudo'
 end
 
 group :production      do

@@ -43,8 +43,13 @@ module EngineSearches
                 :type_captcha, #le type de l'objet jaavscript qui contient le captcha à saisir
                 :fqdn_captcha, # fqdn de l'url qui affiche le captcha du moteur de recherche
                 :label_button_captcha, # label du bouton pour valider le captcha
-                :id_image_captcha # id de l'objet javascript présentant l'image du captcha
-
+                :id_image_captcha, # id de l'objet javascript présentant l'image du captcha
+                :coord_captcha # coordonnates of surface of image captcha (array) [x1, y1, x2, y2]
+=begin
+                x1/y1----------------+
+                |                    |
+                +--------------------x2/y2
+=end
 
     #----------------------------------------------------------------------------------------------------------------
     # class methods
@@ -78,6 +83,7 @@ module EngineSearches
     end
 
     def to_s
+      "\n" +
       "fqdn_search : #{@fqdn_search}\n" +
           "fqdn_search : #{@fqdn_search}\n" +
           "path_search : #{@path_search}\n" +
@@ -87,7 +93,8 @@ module EngineSearches
           "id_captcha : #{@id_captcha}\n" +
           "type_captcha : #{@type_captcha}\n" +
           "label_button_captcha : #{@label_button_captcha}\n" +
-          "id_image_captcha : #{@id_image_captcha}\n"
+          "id_image_captcha : #{@id_image_captcha}\n"  +
+          "coord_captcha : #{@coord_captcha}\n"
     end
 
     private

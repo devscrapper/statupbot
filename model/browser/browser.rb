@@ -50,15 +50,16 @@ module Browsers
     BROWSER_CLICK_MAX_COUNT = 321
     BROWSER_NOT_SET_INPUT_SEARCH = 322
     BROWSER_NOT_SET_INPUT_CAPTCHA = 323
+    BROWSER_NOT_TAKE_CAPTCHA = 324
+    BROWSER_NOT_RELOAD = 325
     #----------------------------------------------------------------------------------------------------------------
     # constant
     #----------------------------------------------------------------------------------------------------------------
-    TMP_DIR = Pathname.new(File.join(File.dirname(__FILE__), '..', '..', 'tmp')).realpath
-    SCREENSHOT = Pathname.new(File.join(File.dirname(__FILE__), '..', '..', 'screenshot')).realpath
     NO_REFERER = "noreferrer"
     DATA_URI = "datauri"
     WITHOUT_LINKS = false #utiliser pour préciser que on ne recupere pas les links avec la fonction de l'extension javascript : get_details_cuurent_page
     WITH_LINKS = true
+    DIR_TMP = [File.dirname(__FILE__), "..", "..", "tmp"]
     #----------------------------------------------------------------------------------------------------------------
     # variable de class
     #----------------------------------------------------------------------------------------------------------------
@@ -457,6 +458,32 @@ module Browsers
       end
     end
 
+     #----------------------------------------------------------------------------------------------------------------
+    # exist_element?
+    #----------------------------------------------------------------------------------------------------------------
+    # test l'existance d'un element sur la page courante
+    #----------------------------------------------------------------------------------------------------------------
+    # input : type de l'objet html(textbox, button, ...), id de lobjet html
+    # output : true si trouvé, sinon false
+    #
+    #----------------------------------------------------------------------------------------------------------------
+    def exist_element?(type, id)
+      raise Error.new(ARGUMENT_UNDEFINE, :values => {:variable => "type"}) if type.nil? or type.empty?
+      raise Error.new(ARGUMENT_UNDEFINE, :values => {:variable => "id"}) if id.nil? or id.empty?
+
+      @@logger.an_event.debug "type #{type}"
+      @@logger.an_event.debug "id #{id}"
+
+      r = "@driver.#{type}(\"#{id}\")"
+      @@logger.an_event.debug "r : #{r}"
+      @@logger.an_event.debug "eval(r) : #{eval(r)}"
+
+      exist = eval(r).exists?
+      @@logger.an_event.debug "eval(r).exists? : #{exist}"
+
+      exist
+
+    end
     #----------------------------------------------------------------------------------------------------------------
     # exist_link
     #----------------------------------------------------------------------------------------------------------------
@@ -715,6 +742,30 @@ module Browsers
 
     end
 
+        #----------------------------------------------------------------------------------------------------------------
+    # reload
+    #----------------------------------------------------------------------------------------------------------------
+    # recharge la page courant
+    #----------------------------------------------------------------------------------------------------------------
+    # input : RAS
+    # output : RAS
+    #----------------------------------------------------------------------------------------------------------------
+    def reload
+      begin
+        @driver.reload
+
+      rescue Exception => e
+        @@logger.an_event.error e.message
+        raise Error.new(BROWSER_NOT_RELOAD, :values => {:url => url}, :error => e)
+
+      else
+
+        @@logger.an_event.debug "browser #{name} #{@id} reload #{url}"
+
+      ensure
+
+      end
+    end
     #----------------------------------------------------------------------------------------------------------------
     # searchbox
     #----------------------------------------------------------------------------------------------------------------
@@ -751,9 +802,18 @@ module Browsers
         @@logger.an_event.debug "input : #{input}"
         @@logger.an_event.debug "keywords : #{keywords}"
 
-        r = "#{type}(\"#{input}\", \"#{keywords}\")"
-        @@logger.an_event.debug "eval(r) : #{r}"
-        eval(r)
+        #teste la présence de la zone de saisie pour eviter d'avoir une erreur technique
+        raise "search textbox not found" unless exist_element?(type, input)
+
+        #remplissage de la zone caractère par caractère pour simuler qqun qui tape au clavier
+        kw = ""
+        keywords.split(//).each { |c|
+          kw += c
+          r = "#{type}(\"#{input}\", \"#{kw}\")"
+          @@logger.an_event.debug "eval(r) : #{r}"
+          eval(r)
+        }
+
 
       rescue Exception => e
         @@logger.an_event.fatal "set input search #{type} #{input} with #{keywords} : #{e.message}"
@@ -856,7 +916,7 @@ module Browsers
 
           title = @driver.title
           @@logger.an_event.debug title
-          output_file = Flow.new(SCREENSHOT,
+          output_file = Flow.new(DIR_TMP,
                                  @driver.name.gsub(" ", "-"),
                                  title[0..32],
                                  Date.today,
@@ -874,6 +934,36 @@ module Browsers
       else
 
         @@logger.an_event.info "browser #{name} take screen shot"
+
+      ensure
+
+      end
+
+    end
+
+    #-----------------------------------------------------------------------------------------------------------------
+    # take_captcha
+    #-----------------------------------------------------------------------------------------------------------------
+    # input : output file captcha, coordonate of captcha on screen
+    # output : image du captcha
+    # exception : technique
+    #-----------------------------------------------------------------------------------------------------------------
+    #-----------------------------------------------------------------------------------------------------------------
+
+
+    def take_captcha(output_file, coord_captcha)
+
+      begin
+
+        @driver.take_area_screenshot(output_file.absolute_path, coord_captcha)
+
+      rescue Exception => e
+        @@logger.an_event.fatal "take captcha : #{e.message}"
+        raise Error.new(BROWSER_NOT_TAKE_SCREENSHOT, :values => {:browser => name, :title => title}, :error => e)
+
+      else
+
+        @@logger.an_event.info "browser #{name} take captcha"
 
       ensure
 

@@ -33,7 +33,7 @@ require_relative '../lib/supervisor'
 #   -v, --version                                    Print version and exit
 #   -h, --help                                       Show this message
 
-TMP = Pathname(File.join(File.dirname(__FILE__), "..", "tmp")).realpath
+DIR_TMP = [File.dirname(__FILE__), "..", "tmp"]
 
 opts = Trollop::options do
   version "visitor factory server 0.4 (c) 2014 Dave Scrapper"
@@ -75,6 +75,11 @@ else
   delay_periodic_load_geolocations = parameters.delay_periodic_load_geolocations
   periodicity_supervision = parameters.periodicity_supervision
   max_count_current_visit = parameters.max_count_current_visit
+  max_time_to_live_visit = parameters.max_time_to_live_visit
+  $dir_archive = parameters.archive
+  $dir_log = parameters.log
+  $dir_tmp = parameters.tmp
+  $dir_visitors = parameters.visitors
 
   if runtime_ruby.nil? or
       delay_periodic_scan.nil? or
@@ -83,6 +88,7 @@ else
       delay_periodic_load_geolocations.nil? or
       periodicity_supervision.nil? or
       max_count_current_visit.nil? or
+      max_time_to_live_visit.nil? or
       $debugging.nil? or
       $staging.nil?
     $stderr << "some parameters not define\n" << "\n"
@@ -101,9 +107,13 @@ logger.a_log.info "delay_periodic_load_geolocations (minute) : #{delay_periodic_
 logger.a_log.info "delay_out_of_time (minute): #{delay_out_of_time}"
 logger.a_log.info "periodicity supervision : #{periodicity_supervision}"
 logger.a_log.info "max count current visit : #{max_count_current_visit}"
-
+logger.a_log.info "max time to live visit: #{max_time_to_live_visit}"
 logger.a_log.info "debugging : #{$debugging}"
 logger.a_log.info "staging : #{$staging}"
+logger.a_log.info "specify dir archive : #{$dir_archive}"
+logger.a_log.info "specific dir log : #{$dir_log}"
+logger.a_log.info "specific dir tmp : #{$dir_tmp}"
+logger.a_log.info "specific dir visitors : #{$dir_visitors}"
 #--------------------------------------------------------------------------------------------------------------------
 # INCLUDE
 #--------------------------------------------------------------------------------------------------------------------
@@ -114,7 +124,7 @@ include Errors
 #--------------------------------------------------------------------------------------------------------------------
 
 begin
-  bt = BrowserTypes.new()
+  bt = BrowserTypes.new(logger)
   logger.a_log.info "load browser type repository file : #{BrowserTypes::BROWSER_TYPE}"
   bt.publish_to_sahi
   logger.a_log.info "publish browser type to \\lib\\sahi.in.co"
@@ -127,6 +137,8 @@ begin
     Signal.trap("TERM") { EventMachine.stop; }
 
     # supervision
+
+    Supervisor.send_online(File.basename(__FILE__, '.rb'))
     Rufus::Scheduler.start_new.every periodicity_supervision do
       Supervisor.send_online(File.basename(__FILE__, '.rb'))
     end
@@ -148,8 +160,15 @@ begin
       when "http"
 
         logger.a_log.info "default geolocation : #{opts[:proxy_ip]}:#{opts[:proxy_port]}"
-        geo_flow = Flow.new(TMP, "geolocations", $staging, Date.today)
-        geo_flow.write(["fr", opts[:proxy_type], opts[:proxy_ip], opts[:proxy_port], opts[:proxy_user], opts[:proxy_pwd]].join(Geolocations::Geolocation::SEPARATOR))
+        geo_flow = Flow.new(File.join($dir_tmp || DIR_TMP),
+                            "geolocations", 
+                            $staging,
+                            Date.today)
+        geo_flow.write(["fr", opts[:proxy_type],
+                        opts[:proxy_ip],
+                        opts[:proxy_port], 
+                        opts[:proxy_user], 
+                        opts[:proxy_pwd]].join(Geolocations::Geolocation::SEPARATOR))
         geo_flow.close
         Geolocations::GeolocationFactory.logger =logger
         geolocation_factory = Geolocations::GeolocationFactory.new(geo_flow)
@@ -167,6 +186,7 @@ begin
         VisitorFactory.runtime_ruby = runtime_ruby
         VisitorFactory.delay_out_of_time = delay_out_of_time
         VisitorFactory.delay_periodic_scan = delay_periodic_scan
+        VisitorFactory.max_time_to_live_visit = max_time_to_live_visit
         VisitorFactory.geolocation_factory = geolocation_factory.nil? ? geolocation_factory : geolocation_factory.dup
         VisitorFactory.logger = logger
 
@@ -195,6 +215,7 @@ begin
         VisitorFactory.runtime_ruby = runtime_ruby
         VisitorFactory.delay_out_of_time = delay_out_of_time
         VisitorFactory.delay_periodic_scan = delay_periodic_scan
+        VisitorFactory.max_time_to_live_visit = max_time_to_live_visit
         VisitorFactory.geolocation_factory = geolocation_factory.nil? ? geolocation_factory : geolocation_factory.dup
         VisitorFactory.logger = logger
 
@@ -224,8 +245,6 @@ begin
         EM.add_periodic_timer(delay_periodic_pool_size_monitor * 60) do vf_mono.pool_size end
         EM.add_periodic_timer(delay_periodic_pool_size_monitor * 60) do vf_multi.pool_size end
     end
-
-    Supervisor.send_online(File.basename(__FILE__, '.rb'))
 
   end
 

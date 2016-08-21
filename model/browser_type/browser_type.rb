@@ -42,10 +42,11 @@ class BrowserTypes
   #----------------------------------------------------------------------------------------------------------------
   # attributs
   #----------------------------------------------------------------------------------------------------------------
-#TODO reviser les parametre de lancement des navigateur  :size window, ....
+  #TODO reviser les parametre de lancement des navigateur  :size window, ....
   attr :browsers,
        :current_os,
-       :current_os_version
+       :current_os_version,
+       :logger
   #staging;os;os_version;browser;browser_version;runtime_path;sandbox;multi_instance_proxy_compatible;start_listening_port_proxy;count_proxy
   #development;Windows;7;Chrome;33.0.1750.117;C:\Users\ET00752\AppData\Local\Google\Chrome\Application\chrome.exe;false;true;9908;10
 
@@ -81,12 +82,24 @@ class BrowserTypes
   end
 
 
-  def initialize
+  def initialize(logger)
+    #--------------------------------------------------------------------------------------------------------------
+    #--------------------------------------------------------------------------------------------------------------
+    # ATTENTION
+    #----------
+    # la variable Listening port proxy sahi du repository browser_type.csv n'est pas utilisé pour paraméter le
+    # browser. Le browser est paramétrer lors du patch du custom_properties du navigateur
+    # TODO revision du model browser_type
+    #--------------------------------------------------------------------------------------------------------------
+    #--------------------------------------------------------------------------------------------------------------
     begin
       raise Error.new(BROWSER_TYPE_NOT_DEFINE, values => {:path => BROWSER_TYPE}) unless File.exist?(BROWSER_TYPE)
       @current_os = OS.name
       @current_os_version = OS.version
-
+      @logger = logger
+      @logger.a_log.debug $staging
+      @logger.a_log.debug @current_os
+      @logger.a_log.debug @current_os_version
       rows = CSV.read(BROWSER_TYPE)
       rows.each { |row|
         unless row.empty?
@@ -103,7 +116,7 @@ class BrowserTypes
                 "proxy_system" => elt_arr[PROXY_SYSTEM],
                 "listening_port_proxy" => elt_arr[START_LISTENING_PORT_PROXY].to_i
             }
-
+            @logger.a_log.debug data
             @browsers = {browser => {browser_version => data}} if @browsers.nil?
             @browsers[browser] = {browser_version => data} if @browsers[browser].nil?
             @browsers[browser][browser_version] = data if @browsers[browser][browser_version].nil?
