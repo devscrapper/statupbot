@@ -93,21 +93,15 @@ module Pages
           end
         }
 
-      rescue Errors::Error => e
-        @@logger.an_event.error e.message
-        case e.code
-          when Browsers::Browser::BROWSER_NOT_FOUND_ALL_LINK
-            raise Error.new(PAGE_NONE_LINK, :error => e)
-        end
-        raise Error.new(PAGE_NOT_CREATE, :error => e)
+        raise Error.new(Pages::Page::PAGE_NONE_INSIDE_LINKS) if @inside_hostname_links.empty? and @inside_fqdn_links.empty?
 
       rescue Exception => e
         @@logger.an_event.error e.message
         raise Error.new(PAGE_NOT_CREATE, :error => e)
 
       ensure
-        @@logger.an_event.debug "page website #{self.to_s}"
-        raise Error.new(Pages::Page::PAGE_NONE_INSIDE_LINKS) if @inside_hostname_links.empty? and @inside_fqdn_links.empty?
+        @@logger.an_event.debug "#{self.to_s}"
+
       end
     end
 

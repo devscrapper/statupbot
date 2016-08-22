@@ -68,6 +68,14 @@ module Pages
         @type = browser.engine_search.type_search
         @submit_button = browser.engine_search.label_button_search
 
+        #teste la présence de la zone de saisie
+        #parfois la page n'est pas affichée mais l'url ipv4.google... est bien dans la zone de l'url
+        #dans ce cas on recharge la page
+        raise Error.new(PAGE_NONE_ELEMENT,
+                        :values => {:url => browser.url,
+                                    :type => @type,
+                                    :id => @input}) unless browser.exist_element?(type, input)
+
         super(browser.url,
               browser.title,
               visit.referrer.search_duration,

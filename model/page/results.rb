@@ -40,7 +40,7 @@ module Pages
     # attribut
     #----------------------------------------------------------------------------------------------------------------
     attr_reader :links,
-               # :landing_link,
+                # :landing_link,
                 :next,
                 :prev,
                 :body
@@ -72,7 +72,7 @@ module Pages
         prv = browser.engine_search.prev(@body)
         @links = browser.engine_search.links(@body)
 
-      #  @landing_link = visit.landing_link
+        #  @landing_link = visit.landing_link
 
         super(browser.url,
               browser.title,
@@ -87,11 +87,11 @@ module Pages
         # maj du text du landing_link de l'objet Visit avec celui trouvé dans les résultats car les search engine ne publient pas
         # tous le même texte et celui retourné par engine bot n'est peut être pas le bon
         @links.delete_if { |l|
-           if visit.has_landing_link &&  l[:href] == visit.landing_link.url
-             visit.landing_link.text = l[:text]
-             true
-           end
-           true if !l[:href].rindex(".pdf").nil?
+          if visit.has_landing_link && l[:href] == visit.landing_link.url
+            visit.landing_link.text = l[:text]
+            true
+          end
+          true if !l[:href].rindex(".pdf").nil?
         }
         @links.map! { |l|
           begin
@@ -100,6 +100,7 @@ module Pages
             @@logger.an_event.debug "link #{l["href"]} #{e.message}"
           end
         }
+        raise Error.new(PAGE_NONE_INSIDE_LINKS, :values => {:url => @uri.to_s}) if @links.empty?
 
       rescue Exception => e
         @@logger.an_event.error e.message
@@ -107,7 +108,7 @@ module Pages
 
       else
         @@logger.an_event.debug "#{self.to_s}"
-        raise Error.new(PAGE_NONE_INSIDE_LINKS, :values => {:url => @uri.to_s}) if @links.empty?
+
 
       end
     end
@@ -136,7 +137,7 @@ module Pages
           super.to_s +
           "next : #{@next}\n" +
           "prev : #{@prev}\n" +
-          "links (#{@links.size}): \n#{@links.map{|t| "#{t}\n"}.join("")}\n" +
+          "links (#{@links.size}): \n#{@links.map { |t| "#{t}\n" }.join("")}\n" +
           "body : #{}\n"
     end
 

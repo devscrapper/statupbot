@@ -172,7 +172,7 @@ module Browsers
 
         results_str = @driver.links
 
-        raise "_sahi.links() not return links of page" if results_str == "" or results_str.nil?
+        raise "_sahi.links() return none link of page" if results_str == "" or results_str.nil?
 
         results_hsh = JSON.parse(results_str)
 
@@ -201,21 +201,16 @@ module Browsers
         @@logger.an_event.debug "links #{links}"
 
       rescue Exception => e
-        if i < count
-          @@logger.an_event.warn e.message
-          sleep 1
-          i += 1
-          retry
-        else
-          @@logger.an_event.fatal e.message
-          raise Error.new(BROWSER_NOT_FOUND_ALL_LINK, :values => {:browser => name}, :error => e)
-        end
+        i += 1
+        @@logger.an_event.warn e.message
+        sleep 3
+        retry if i < count
+        @@logger.an_event.fatal e.message
+        raise Error.new(BROWSER_NOT_FOUND_ALL_LINK, :values => {:browser => name}, :error => e)
 
       else
-        @@logger.an_event.debug "browser #{name} #{@id} found all links #{links}"
+        @@logger.an_event.debug "browser #{name} found all links #{links}"
         links
-
-      ensure
 
       end
     end
@@ -239,17 +234,18 @@ module Browsers
         src = ""
 
         src = @driver.body
-        @@logger.an_event.debug "src : #{src}"
 
-        raise "body #{url} is empty" if src.empty?
-          #@@logger.an_event.debug src
+        if src.empty?
+          @@logger.an_event.warn "empty body current page : #{url}"
+          raise "body #{url} is empty"
+        end
 
       rescue Exception => e
-        @@logger.an_event.warn "browser #{@id} #{e.message}"
+        @@logger.an_event.warn e.message
         count_retry += 1
         sleep 1
         retry if count_retry < 20
-        @@logger.an_event.error "browser #{@id} #{e.message}"
+        @@logger.an_event.error "browser #{e.message}"
         raise Error.new(BROWSER_NOT_FOUND_BODY, :values => {:browser => name}, :error => e)
 
       else
@@ -267,7 +263,7 @@ module Browsers
 
       else
 
-        @@logger.an_event.debug "browser #{name} #{@id} get body"
+        @@logger.an_event.debug "browser #{name} get body"
         body
 
       end
@@ -296,7 +292,7 @@ module Browsers
 
         if link.is_a?(Sahi::ElementStub)
           link_element = link
-          raise "browser #{@id} not found Sahi::ElementStub #{link_element.to_s}" unless link_element.exists?
+          raise "browser not found Sahi::ElementStub #{link_element.to_s}" unless link_element.exists?
 
           # on sait que le link exist, mais on ne sait pas avec element il a été identifié
           # alors on re-test l'existance pour trouver le bon find_element
@@ -311,21 +307,21 @@ module Browsers
                 if found = link_element.exists?
                   break
                 else
-                  @@logger.an_event.warn "browser #{@id} not found Pages::Link #{link_element.to_s}"
+                  @@logger.an_event.warn "browser not found Pages::Link #{link_element.to_s}"
                 end
               rescue Exception => e
               end
             end
           }
-          raise "browser #{@id} not found Pages::Link #{link_element.to_s}" unless found
+          raise "browser not found Pages::Link #{link_element.to_s}" unless found
 
         elsif link.is_a?(URI)
           link_element = @driver.link(link.to_s)
-          raise "browser #{@id} not found URI #{link_element.to_s}" unless link_element.exists?
+          raise "browser not found URI #{link_element.to_s}" unless link_element.exists?
 
         elsif link.is_a?(String)
           link_element = @driver.link(link)
-          raise "browser #{@id} not found String #{link_element.to_s}" unless link_element.exists?
+          raise "browser not found String #{link_element.to_s}" unless link_element.exists?
 
         end
       rescue Exception => e
@@ -334,10 +330,10 @@ module Browsers
         raise Error.new(BROWSER_NOT_FOUND_LINK, :values => {:browser => name}, :error => e)
 
       else
-        @@logger.an_event.debug "browser #{name} #{@id} found link #{link}" if link.is_a?(String)
-        @@logger.an_event.debug "browser #{name} #{@id} found link #{link.url}" if link.is_a?(Pages::Link)
-        @@logger.an_event.debug "browser #{name} #{@id} found link #{link.to_s}" if link.is_a?(URI)
-        @@logger.an_event.debug "browser #{name} #{@id} found link #{link.identifiers}" if link.is_a?(Sahi::ElementStub)
+        @@logger.an_event.debug "browser #{name} found link #{link}" if link.is_a?(String)
+        @@logger.an_event.debug "browser #{name} found link #{link.url}" if link.is_a?(Pages::Link)
+        @@logger.an_event.debug "browser #{name} found link #{link.to_s}" if link.is_a?(URI)
+        @@logger.an_event.debug "browser #{name} found link #{link.identifiers}" if link.is_a?(Sahi::ElementStub)
 
         @@logger.an_event.debug "link_element #{link_element.to_s}"
 
@@ -395,10 +391,10 @@ module Browsers
         raise Error.new(BROWSER_CLICK_MAX_COUNT, :values => {:browser => name, :link => url_before}, :error => e) unless count > 0
 
       else
-        @@logger.an_event.debug "browser #{name} #{@id} click on url #{link}" if link.is_a?(String)
-        @@logger.an_event.debug "browser #{name} #{@id} click on url #{link.url}" if link.is_a?(Pages::Link)
-        @@logger.an_event.debug "browser #{name} #{@id} click on url #{link.to_s}" if link.is_a?(URI)
-        @@logger.an_event.debug "browser #{name} #{@id} click on url #{link.identifiers}" if link.is_a?(Sahi::ElementStub)
+        @@logger.an_event.debug "browser #{name} click on url #{link}" if link.is_a?(String)
+        @@logger.an_event.debug "browser #{name} click on url #{link.url}" if link.is_a?(Pages::Link)
+        @@logger.an_event.debug "browser #{name} click on url #{link.to_s}" if link.is_a?(URI)
+        @@logger.an_event.debug "browser #{name} click on url #{link.identifiers}" if link.is_a?(Sahi::ElementStub)
       ensure
 
       end
@@ -442,7 +438,7 @@ module Browsers
         #erreur sahi...on est tj sur la page initiale de sahi
         raise Error.new(BROWSER_NOT_ACCESS_URL, :values => {:browser => name, :url => url_start_page}) if new_page_title == old_page_title
 
-        @@logger.an_event.debug "browser #{name} #{@id} open start page #{url}"
+        @@logger.an_event.debug "browser #{name} open start page #{url}"
 
       rescue Exception => e
         @@logger.an_event.fatal e.message
@@ -458,7 +454,7 @@ module Browsers
       end
     end
 
-     #----------------------------------------------------------------------------------------------------------------
+    #----------------------------------------------------------------------------------------------------------------
     # exist_element?
     #----------------------------------------------------------------------------------------------------------------
     # test l'existance d'un element sur la page courante
@@ -484,6 +480,7 @@ module Browsers
       exist
 
     end
+
     #----------------------------------------------------------------------------------------------------------------
     # exist_link
     #----------------------------------------------------------------------------------------------------------------
@@ -536,7 +533,7 @@ module Browsers
         raise Error.new(BROWSER_NOT_FOUND_LINK, :values => {:domain => "", :identifier => link.to_s}, :error => e)
 
       else
-        @@logger.an_event.debug "browser #{name} #{@id} found link #{link.to_s}"
+        @@logger.an_event.debug "browser #{name} found link #{link.to_s}"
 
       ensure
 
@@ -561,7 +558,7 @@ module Browsers
 
       else
 
-        @@logger.an_event.debug "browser #{name} #{@id} go back"
+        @@logger.an_event.debug "browser #{name} go back"
 
       ensure
 
@@ -586,7 +583,7 @@ module Browsers
 
       else
 
-        @@logger.an_event.debug "browser #{name} #{@id} go to #{url}"
+        @@logger.an_event.debug "browser #{name} go to #{url}"
 
       ensure
 
@@ -692,7 +689,7 @@ module Browsers
 
       else
 
-        @@logger.an_event.debug "browser #{name} #{@id} open"
+        @@logger.an_event.debug "browser #{name} open"
 
       ensure
 
@@ -742,7 +739,7 @@ module Browsers
 
     end
 
-        #----------------------------------------------------------------------------------------------------------------
+    #----------------------------------------------------------------------------------------------------------------
     # reload
     #----------------------------------------------------------------------------------------------------------------
     # recharge la page courant
@@ -760,12 +757,13 @@ module Browsers
 
       else
 
-        @@logger.an_event.debug "browser #{name} #{@id} reload #{url}"
+        @@logger.an_event.debug "browser #{name} reload #{url}"
 
       ensure
 
       end
     end
+
     #----------------------------------------------------------------------------------------------------------------
     # searchbox
     #----------------------------------------------------------------------------------------------------------------
@@ -881,11 +879,11 @@ module Browsers
         @driver.submit(form).click
 
       rescue Exception => e
-        @@logger.an_event.error "browser #{name} #{@id} submit form #{form} : #{ e.message}"
+        @@logger.an_event.error "browser #{name} submit form #{form} : #{ e.message}"
         raise Error.new(BROWSER_NOT_SUBMIT_FORM, :values => {:browser => name, :form => form}, :error => e)
 
       else
-        @@logger.an_event.debug "browser #{name} #{@id} submit form #{form}"
+        @@logger.an_event.debug "browser #{name} submit form #{form}"
 
       ensure
 
@@ -1007,7 +1005,7 @@ module Browsers
 
       else
 
-        @@logger.an_event.debug "browser #{name} #{@id} found title #{title}"
+        @@logger.an_event.debug "browser #{name} found title #{title}"
         title
 
       ensure
@@ -1041,7 +1039,7 @@ module Browsers
 
       else
 
-        @@logger.an_event.debug "browser #{name} #{@id} found url #{url} of current page"
+        @@logger.an_event.debug "browser #{name} found url #{url} of current page"
         url
       end
     end

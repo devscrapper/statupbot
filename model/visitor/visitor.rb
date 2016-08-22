@@ -57,6 +57,7 @@ module Visitors
     VISITOR_NOT_CLICK_ON_REFERRAL = 631
     VISITOR_SEE_CAPTCHA = 632
     VISITOR_NOT_SUBMIT_CAPTCHA = 633
+    VISITOR_TOO_MANY_CAPTCHA = 634
     #----------------------------------------------------------------------------------------------------------------
     # constants
     #----------------------------------------------------------------------------------------------------------------
@@ -79,8 +80,7 @@ module Visitors
                 "I" => "cl_on_referral",
                 "0" => "sb_search",
                 "2" => "sb_search",
-                "1" => "sb_final_search",
-                "3" => "sb_captcha"}
+                "1" => "sb_final_search"}
 
     MAX_COUNT_SUBMITING_CAPTCHA = 3 # nombre max de submission de captcha
     #----------------------------------------------------------------------------------------------------------------
@@ -129,7 +129,7 @@ module Visitors
         raise Error.new(VISITOR_NOT_BORN, :error => e)
 
       else
-        @@logger.an_event.info "visitor #{@id} is born"
+        @@logger.an_event.info "visitor  is born"
 
       ensure
 
@@ -201,7 +201,7 @@ module Visitors
         raise Error.new(VISITOR_NOT_CREATE, :error => e)
 
       else
-        @@logger.an_event.info "visitor #{@id} create runtime directory, config proxy Sahi and browser"
+        @@logger.an_event.info "visitor  create runtime directory, config proxy Sahi and browser"
 
       ensure
 
@@ -230,11 +230,11 @@ module Visitors
         @browser.quit
 
       rescue Exception => e
-        @@logger.an_event.error "visitor #{@id} close browser : #{e.message}"
+        @@logger.an_event.error "visitor  close browser : #{e.message}"
         raise Error.new(VISITOR_NOT_CLOSE, :error => e)
 
       else
-        @@logger.an_event.info "visitor #{@id} close browser"
+        @@logger.an_event.info "visitor  close browser"
       ensure
 
       end
@@ -260,7 +260,7 @@ module Visitors
         @@logger.an_event.error e.message
         raise Error.new(VISITOR_NOT_DIE, :error => e)
       else
-        @@logger.an_event.info "visitor #{@id} die"
+        @@logger.an_event.info "visitor  die"
       ensure
 
       end
@@ -290,7 +290,7 @@ module Visitors
         raise Error.new(LOG_VISITOR_NOT_DELETE, :error => e)
 
       else
-        @@logger.an_event.info "visitor #{@id} delete log"
+        @@logger.an_event.info "visitor  delete log"
 
       ensure
 
@@ -316,7 +316,6 @@ module Visitors
 
         script = @visit.script
 
-
         count_actions = 0
 
         for action in script
@@ -340,7 +339,7 @@ module Visitors
                 # force l'accès au referral par un accès direct
                 act = "e"
                 script.insert(count_actions + 1, act)
-                @@logger.an_event.info "visitor #{@id} make action <#{COMMANDS[act]}> instead of  <#{COMMANDS[action]}>"
+                @@logger.an_event.info "visitor  make action <#{COMMANDS[act]}> instead of  <#{COMMANDS[action]}>"
                 count_actions +=1
                 Monitoring.page_browse(@visit.id, script)
 
@@ -348,7 +347,7 @@ module Visitors
                 # ajout dans le script d'action pour revenir à la page précédent pour refaire l'action qui a planté.
                 # ceci s'arretera quand il n'y aura plus de lien sur lesquel clickés ; lien choisi dans les 3 actions
                 script.insert(count_actions + 1, ["c", action]).flatten!
-                @@logger.an_event.info "visitor #{@id} go back to make action #{COMMANDS[action]} again"
+                @@logger.an_event.info "visitor  go back to make action #{COMMANDS[action]} again"
                 count_actions +=1
                 Monitoring.page_browse(@visit.id, script)
 
@@ -359,48 +358,29 @@ module Visitors
                 # ajout dand le script d'une action pour choisir un autres results  ou un autre lien
                 #  ceci s'arretera quand il n'y aura plus de lien sur lesquels clickés
                 script.insert(count_actions + 1, action)
-                @@logger.an_event.info "visitor #{@id} make action <#{COMMANDS[action]}> again"
+                @@logger.an_event.info "visitor  make action <#{COMMANDS[action]}> again"
                 count_actions +=1
                 Monitoring.page_browse(@visit.id, script)
 
-              when VISITOR_SEE_CAPTCHA
-                # - ajout dans le script d'un action pour gérer une page affichant un capcha du MDR
-                # pour eviter une boucle infini, on limite le nombre de submit captcha à 3, pour cela on compte le
-                # nombre d'action '3' présentes dans le script. Si > MAX_COUNT_SUBMITING_CAPTCHA alors VISITOR_NOT_SUBMIT_CAPTCHA
-                # - pas d'ajout de l'action en cours pour la refaire car une fois que le capctha google est passe alors
-                # google rejoue la requette précedente et on arrive sur la page déterminé par l'<action>
-                act = "3"
-                if script.count("3") < MAX_COUNT_SUBMITING_CAPTCHA
-                  script.insert(count_actions + 1, [act, action]).flatten!
-                  @@logger.an_event.info "visitor #{@id} make action <#{COMMANDS[act]}> before <#{COMMANDS[action]}> again"
-                  count_actions +=1
-                  Monitoring.page_browse(@visit.id, script)
-
-                else
-                  @@logger.an_event.error "visitor #{@id} submited too many captchas"
-                  raise Error.new(VISITOR_NOT_FULL_EXECUTE_VISIT, :error => e)
-
-                end
-
               else
-                @@logger.an_event.error "visitor #{@id} make action  <#{COMMANDS[action]}> : #{e.message}"
+                @@logger.an_event.error "visitor  make action  <#{COMMANDS[action]}> : #{e.message}"
                 raise Error.new(VISITOR_NOT_FULL_EXECUTE_VISIT, :error => e)
             end
 
 
           rescue Exception => e
             take_screenshot(count_actions, action)
-            @@logger.an_event.error "visitor #{@id} make action <#{COMMANDS[action]}> : #{e.message}"
+            @@logger.an_event.error "visitor  make action <#{COMMANDS[action]}> : #{e.message}"
             raise Error.new(VISITOR_NOT_FULL_EXECUTE_VISIT, :error => e)
 
           else
-            @@logger.an_event.info "visitor #{@id} executed action <#{COMMANDS[action]}>."
+            @@logger.an_event.info "visitor  executed action <#{COMMANDS[action]}>."
             Monitoring.page_browse(@visit.id, script)
             take_screenshot(count_actions, action)
             count_actions +=1
 
           ensure
-            @@logger.an_event.info "visitor #{@id} executed #{count_actions}/#{script.size}(#{(count_actions * 100 /script.size).round(0)}%) actions."
+            @@logger.an_event.info "visitor  executed #{count_actions}/#{script.size}(#{(count_actions * 100 /script.size).round(0)}%) actions."
           end
 
         end
@@ -412,7 +392,7 @@ module Visitors
         raise Error.new(VISITOR_NOT_FULL_EXECUTE_VISIT, :error => e)
 
       else
-        @@logger.an_event.info "visitor #{@id} execute visit."
+        @@logger.an_event.info "visitor  execute visit."
 
       ensure
 
@@ -442,14 +422,14 @@ module Visitors
         FileUtils.rm_r(@home) if File.exist?(@home)
 
       rescue Exception => e
-        @@logger.an_event.debug "visitor #{@id} not inhume, try #{try_count}"
+        @@logger.an_event.warn "visitor inhume, try #{try_count}"
         sleep (1)
         try_count +=1
         retry if try_count < max_try_count
         @@logger.an_event.error e.message
         raise Error.new(VISITOR_NOT_INHUME, :error => e)
       else
-        @@logger.an_event.info "visitor #{@id} inhume"
+        @@logger.an_event.info "visitor  inhume"
       ensure
 
       end
@@ -478,7 +458,7 @@ module Visitors
         raise Error.new(VISITOR_NOT_OPEN, :error => e)
 
       else
-        @@logger.an_event.info "visitor #{@id} open his browser"
+        @@logger.an_event.info "visitor  open his browser"
 
       ensure
 
@@ -541,11 +521,11 @@ module Visitors
 
       rescue Exception => e
 
-        @@logger.an_event.error "visitor #{@id} not found advert on website."
+        @@logger.an_event.error "visitor  chose advert on website : #{e.message}"
         raise Error.new(VISITOR_NOT_CHOOSE_ADVERT, :error => e)
 
       else
-        @@logger.an_event.info "visitor #{@id} chose advert on website."
+        @@logger.an_event.info "visitor  chose advert on website."
 
       end
 
@@ -558,40 +538,36 @@ module Visitors
 
       rescue Exception => e
 
-        @@logger.an_event.warn "visitor #{@id} not clicked on link advert on website : #{e.message}."
+        @@logger.an_event.error "visitor  clicked on link advert on website : #{e.message}."
         raise Error.new(VISITOR_NOT_CLICK_ON_ADVERT, :error => e)
 
       else
-        @@logger.an_event.info "visitor #{@id} clicked on link advert on website."
+        @@logger.an_event.info "visitor  clicked on link advert on website."
 
       end
 
       #--------------------------------------------------------------------------------------------------------
       # read Page
       #--------------------------------------------------------------------------------------------------------
-      count_retry = 0
       begin
+        manage_captcha if @browser.engine_search.is_captcha_page?(@browser.url)
+
         @current_page = Pages::Unmanage.new(@visit.advertising.advertiser.next_duration,
                                             @browser)
 
       rescue Errors::Error => e
-        case e.code
-          when Pages::Page::PAGE_NONE_INSIDE_LINKS
-            count_retry += 1
-            sleep 3
-            @@logger.an_event.warn "visitor #{@id} try catch links again #{count_retry} times"
-            retry if count_retry < 3
-        end
-        raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
-
-      rescue Exception => e
+        @@logger.an_event.error "visitor browsed advertiser website : #{e.message}"
         raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
 
       else
+        #--------------------------------------------------------------------------------------------------------
+        # Page Unmanage Website displayed
+        #--------------------------------------------------------------------------------------------------------
+        @@logger.an_event.info "visitor browsed advertiser website"
         read(@current_page)
 
-      ensure
         @history << [@browser.driver, @current_page]
+        @@logger.an_event.debug "add current page to history"
       end
     end
 
@@ -609,38 +585,36 @@ module Visitors
 
       rescue Exception => e
 
-        @@logger.an_event.warn "visitor #{@id} not clicked on landing link #{link.url} on results page : #{e.message}."
+        @@logger.an_event.error "visitor clicked on landing link #{link.url} on results page : #{e.message}."
         raise Error.new(VISITOR_NOT_CLICK_ON_LANDING, :error => e)
 
       else
-        @@logger.an_event.info "visitor #{@id} clicked on link #{link.url} on results page."
+        @@logger.an_event.info "visitor  clicked on link #{link.url} on results page."
 
       end
 
       #--------------------------------------------------------------------------------------------------------
       # read Page
       #--------------------------------------------------------------------------------------------------------
-      count_retry = 0
       begin
+        manage_captcha if @browser.engine_search.is_captcha_page?(@browser.url)
+
         @current_page = Pages::Website.new(@visit, @browser)
 
-      rescue Errors::Error => e
-        case e.code
-          when Pages::Page::PAGE_NONE_INSIDE_LINKS
-            count_retry += 1
-            sleep 10
-            @@logger.an_event.warn "visitor #{@id} try catch links again #{count_retry} times"
-            retry if count_retry < 3
-        end
-        raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
-
       rescue Exception => e
+        @@logger.an_event.error "visitor browsed landing page on website : #{e.message}"
         raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
 
       else
+        #--------------------------------------------------------------------------------------------------------
+        # Page Webiste displayed
+        #--------------------------------------------------------------------------------------------------------
+        @@logger.an_event.info "visitor browsed landing page on website"
         read(@current_page)
-      ensure
+
         @history << [@browser.driver, @current_page]
+        @@logger.an_event.debug "add current page to history"
+
       end
 
 
@@ -658,11 +632,11 @@ module Visitors
 
       rescue Exception => e
 
-        @@logger.an_event.error e.message
+        @@logger.an_event.error "visitor  chose link <#{link.url}> on advertiser website : #{e.message}"
         raise Error.new(VISITOR_NOT_CHOOSE_LINK, :error => e)
 
       else
-        @@logger.an_event.info "visitor #{@id} chose link <#{link.url}> on advertiser website."
+        @@logger.an_event.info "visitor  chose link <#{link.url}> on advertiser website."
 
       end
 
@@ -675,40 +649,37 @@ module Visitors
 
       rescue Exception => e
         @failed_links << link.url
-        @@logger.an_event.warn "visitor #{@id} not clicked on link #{link.url} on advertiser website : #{e.message}."
+        @@logger.an_event.error "visitor clicked on link #{link.url} on advertiser website : #{e.message}."
         raise Error.new(VISITOR_NOT_CLICK_ON_LINK_ON_ADVERTISER, :error => e)
 
       else
-        @@logger.an_event.info "visitor #{@id} clicked on link #{link.url}> on advertiser website."
+        @@logger.an_event.info "visitor  clicked on link #{link.url}> on advertiser website."
 
       end
 
       #--------------------------------------------------------------------------------------------------------
       # read Page
       #--------------------------------------------------------------------------------------------------------
-      count_retry = 0
       begin
+        manage_captcha if @browser.engine_search.is_captcha_page?(@browser.url)
 
         @current_page = Pages::Unmanage.new(@visit.advertising.advertiser.next_duration,
                                             @browser)
 
-      rescue Errors::Error => e
-        case e.code
-          when Pages::Page::PAGE_NONE_INSIDE_LINKS
-            count_retry += 1
-            sleep 5
-            @@logger.an_event.warn "visitor #{@id} try catch links again #{count_retry} times"
-            retry if count_retry < 3
-        end
-        raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
-
       rescue Exception => e
+        @@logger.an_event.error "visitor browsed unmanage page : #{e.message}"
         raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
 
       else
+        #--------------------------------------------------------------------------------------------------------
+        # Page Results displayed
+        #--------------------------------------------------------------------------------------------------------
+        @@logger.an_event.info "visitor browsed unmanage page"
         read(@current_page)
-      ensure
+
         @history << [@browser.driver, @current_page]
+        @@logger.an_event.debug "add current page to history"
+
       end
     end
 
@@ -722,11 +693,11 @@ module Visitors
 
       rescue Exception => e
 
-        @@logger.an_event.error e.message
+        @@logger.an_event.error "visitor  chose link <#{link.url}> on results search : #{e.message}"
         raise Error.new(VISITOR_NOT_CHOOSE_LINK, :error => e)
 
       else
-        @@logger.an_event.info "visitor #{@id} chose link <#{link.url}> on results search."
+        @@logger.an_event.info "visitor  chose link <#{link.url}> on results search."
 
       end
 
@@ -739,40 +710,37 @@ module Visitors
 
       rescue Exception => e
         @failed_links << link.url
-        @@logger.an_event.warn "visitor #{@id} not clicked on link #{link.url} on results page : #{e.message}."
+        @@logger.an_event.error "visitor clicked on link #{link.url} on results page : #{e.message}."
         raise Error.new(VISITOR_NOT_CLICK_ON_RESULT, :error => e)
 
       else
-        @@logger.an_event.info "visitor #{@id} clicked on link #{link.url} on results page."
+        @@logger.an_event.info "visitor clicked on link #{link.url} on results page."
 
       end
 
       #--------------------------------------------------------------------------------------------------------
       # read Page
       #--------------------------------------------------------------------------------------------------------
-      count_retry = 0
       begin
+        manage_captcha if @browser.engine_search.is_captcha_page?(@browser.url)
 
         @current_page = Pages::Unmanage.new(@visit.referrer.search_duration,
                                             @browser)
 
-      rescue Errors::Error => e
-        case e.code
-          when Pages::Page::PAGE_NONE_INSIDE_LINKS
-            count_retry += 1
-            sleep 10
-            @@logger.an_event.warn "visitor #{@id} try catch links again #{count_retry} times"
-            retry if count_retry < 3
-        end
-        raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
-
       rescue Exception => e
+        @@logger.an_event.error "visitor browsed unmanage page : #{e.message}"
         raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
 
       else
+        #--------------------------------------------------------------------------------------------------------
+        # Page Results displayed
+        #--------------------------------------------------------------------------------------------------------
+        @@logger.an_event.info "visitor browsed unmanage page"
         read(@current_page)
-      ensure
+
         @history << [@browser.driver, @current_page]
+        @@logger.an_event.debug "add current page to history"
+
       end
     end
 
@@ -787,11 +755,11 @@ module Visitors
 
       rescue Exception => e
 
-        @@logger.an_event.error e.message
+        @@logger.an_event.error "visitor chose link <#{link.url}> on unknown website : #{e.message}"
         raise Error.new(VISITOR_NOT_CHOOSE_LINK, :error => e)
 
       else
-        @@logger.an_event.info "visitor #{@id} chose link <#{link.url}> on unknown website."
+        @@logger.an_event.info "visitor chose link <#{link.url}> on unknown website."
 
       end
 
@@ -804,39 +772,37 @@ module Visitors
 
       rescue Exception => e
         @failed_links << link.url
-        @@logger.an_event.warn "visitor #{@id} not clicked on link #{link.url} on unknown website : #{e.message}."
+        @@logger.an_event.error "visitor clicked on link #{link.url} on unknown website : #{e.message}."
         raise Error.new(VISITOR_NOT_CLICK_ON_LINK_ON_UNKNOWN, :error => e)
 
       else
-        @@logger.an_event.info "visitor #{@id} clicked on link <#{link.url}> on unknown website."
+        @@logger.an_event.info "visitor  clicked on link <#{link.url}> on unknown website."
 
       end
 
       #--------------------------------------------------------------------------------------------------------
       # read Page
       #--------------------------------------------------------------------------------------------------------
-      count_retry = 0
       begin
+        manage_captcha if @browser.engine_search.is_captcha_page?(@browser.url)
+
         @current_page = Pages::Unmanage.new(@visit.referrer.surf_duration,
                                             @browser)
 
-      rescue Errors::Error => e
-        case e.code
-          when Pages::Page::PAGE_NONE_INSIDE_LINKS, Pages::Page::PAGE_NONE_LINK
-            count_retry += 1
-            sleep 10
-            @@logger.an_event.warn "visitor #{@id} try catch links again #{count_retry} times"
-            retry if count_retry < 3
-        end
-        raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
-
       rescue Exception => e
+        @@logger.an_event.error "visitor browsed unmanage page : #{e.message}"
         raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
 
       else
+        #--------------------------------------------------------------------------------------------------------
+        # Page Results displayed
+        #--------------------------------------------------------------------------------------------------------
+        @@logger.an_event.info "visitor browsed unmanage page"
         read(@current_page)
-      ensure
+
         @history << [@browser.driver, @current_page]
+        @@logger.an_event.debug "add current page to history"
+
       end
     end
 
@@ -852,11 +818,11 @@ module Visitors
 
       rescue Exception => e
 
-        @@logger.an_event.error e.message
+        @@logger.an_event.error "visitor  chose link <#{link.url}> on website : #{e.message}"
         raise Error.new(VISITOR_NOT_CHOOSE_LINK, :error => e)
 
       else
-        @@logger.an_event.info "visitor #{@id} chose link <#{link.url}> on website."
+        @@logger.an_event.info "visitor  chose link <#{link.url}> on website."
 
       end
 
@@ -869,39 +835,36 @@ module Visitors
 
       rescue Exception => e
         @failed_links << link.url
-        @@logger.an_event.warn "visitor #{@id} not clicked on link #{link.url} on website : #{e.message}."
+        @@logger.an_event.error "visitor clicked on link #{link.url} on website : #{e.message}."
         raise Error.new(VISITOR_NOT_CLICK_ON_LINK_ON_WEBSITE, :error => e)
 
       else
-        @@logger.an_event.info "visitor #{@id} clicked on link #{link.url} on website."
+        @@logger.an_event.info "visitor  clicked on link #{link.url} on website."
 
       end
 
       #--------------------------------------------------------------------------------------------------------
       # read Page
       #--------------------------------------------------------------------------------------------------------
-      count_retry = 0
       begin
+        manage_captcha if @browser.engine_search.is_captcha_page?(@browser.url)
 
         @current_page = Pages::Website.new(@visit, @browser)
 
-      rescue Errors::Error => e
-        case e.code
-          when Pages::Page::PAGE_NONE_INSIDE_LINKS
-            count_retry += 1
-            sleep 10
-            @@logger.an_event.warn "visitor #{@id} try catch links again #{count_retry} times"
-            retry if count_retry < 3
-        end
-        raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
-
       rescue Exception => e
+        @@logger.an_event.error "visitor browsed website page : #{e.message}"
         raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
 
       else
+        #--------------------------------------------------------------------------------------------------------
+        # Page Results displayed
+        #--------------------------------------------------------------------------------------------------------
+        @@logger.an_event.info "visitor browsed website page"
         read(@current_page)
-      ensure
+
         @history << [@browser.driver, @current_page]
+        @@logger.an_event.debug "add current page to history"
+
       end
 
     end
@@ -916,42 +879,76 @@ module Visitors
         @browser.click_on(nxt)
         @@logger.an_event.debug "click on next"
 
-        @current_page = Pages::Results.new(@visit, @browser)
-
       rescue Exception => e
-        @@logger.an_event.error e.message
+        @@logger.an_event.error "visitor clicked on next : #{e.message}"
         raise Error.new(VISITOR_NOT_CLICK_ON_NEXT, :error => e)
 
       else
+        @@logger.an_event.info "visitor clicked on next"
 
-        @@logger.an_event.info "visitor #{@id} clicked on next <#{nxt.text}>"
+      end
+
+      begin
+        manage_captcha if @browser.engine_search.is_captcha_page?(@browser.url)
+
+        @current_page = Pages::Results.new(@visit,
+                                           @browser)
+
+      rescue Exception => e
+        @@logger.an_event.error "visitor browsed next results page : #{e.message}"
+        raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
+
+      else
+        #--------------------------------------------------------------------------------------------------------
+        # Page Results displayed
+        #--------------------------------------------------------------------------------------------------------
+        @@logger.an_event.info "visitor browsed next results page"
         read(@current_page)
-      ensure
+
         @history << [@browser.driver, @current_page]
+        @@logger.an_event.debug "add current page to history"
 
       end
     end
 
     def cl_on_prev
       begin
+        @@logger.an_event.debug "action #{__method__}"
 
         prv = @current_page.prev
+        @@logger.an_event.debug "prv #{prv}"
+
         @browser.click_on(prv)
-
-        @current_page = Pages::Results.new(@visit, @browser)
-
+        @@logger.an_event.debug "click on prev"
 
       rescue Exception => e
-        @@logger.an_event.error e.message
+        @@logger.an_event.error "visitor clicked on prev : #{e.message}"
         raise Error.new(VISITOR_NOT_CLICK_ON_PREV, :error => e)
 
       else
+        @@logger.an_event.info "visitor clicked on prev"
 
-        @@logger.an_event.info "visitor #{@id} clicked on prev #{prv.text}"
+      end
 
+      begin
+        manage_captcha if @browser.engine_search.is_captcha_page?(@browser.url)
+
+        @current_page = Pages::Results.new(@visit,
+                                           @browser)
+
+      rescue Exception => e
+        @@logger.an_event.error "visitor browsed results page"
+        raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
+
+      else
+        #--------------------------------------------------------------------------------------------------------
+        # Page Results displayed
+        #--------------------------------------------------------------------------------------------------------
+        @@logger.an_event.info "visitor browsed results page"
         read(@current_page)
-      ensure
+
         @history << [@browser.driver, @current_page]
+        @@logger.an_event.debug "add current page to history"
 
       end
     end
@@ -969,38 +966,33 @@ module Visitors
 
       rescue Exception => e
 
-        @@logger.an_event.warn "visitor #{@id} not clicked on referral link #{link.url} on results page : #{e.message}."
+        @@logger.an_event.error "visitor clicked on referral link #{link.url} on results page : #{e.message}."
         raise Error.new(VISITOR_NOT_CLICK_ON_REFERRAL, :error => e)
 
       else
-        @@logger.an_event.info "visitor #{@id} clicked on link #{link.url} on results page."
+        @@logger.an_event.info "visitor clicked on link #{link.url} on results page."
 
       end
 
-      #--------------------------------------------------------------------------------------------------------
-      # read Page
-      #--------------------------------------------------------------------------------------------------------
-      count_retry = 0
       begin
+        manage_captcha if @browser.engine_search.is_captcha_page?(@browser.url)
+
         @current_page = Pages::Unmanage.new(visit.referrer.duration, @browser)
 
-      rescue Errors::Error => e
-        case e.code
-          when Pages::Page::PAGE_NONE_INSIDE_LINKS
-            count_retry += 1
-            sleep 10
-            @@logger.an_event.warn "visitor #{@id} try catch links again #{count_retry} times"
-            retry if count_retry < 3
-        end
-        raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
-
       rescue Exception => e
+        @@logger.an_event.error "visitor browsed unmanage page : #{e.message}"
         raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
 
       else
+        #--------------------------------------------------------------------------------------------------------
+        # Page Results displayed
+        #--------------------------------------------------------------------------------------------------------
+        @@logger.an_event.info "visitor browsed referral unmanage page"
         read(@current_page)
-      ensure
+
         @history << [@browser.driver, @current_page]
+        @@logger.an_event.debug "add current page to history"
+
       end
 
     end
@@ -1009,45 +1001,19 @@ module Visitors
       begin
         @@logger.an_event.debug "action #{__method__}"
 
-        @current_page = @history[@history.size - 2][1].dup
-        @@logger.an_event.debug "current page = #{@current_page}"
+        last_page = @history[@history.size - 2][1].dup
+        @@logger.an_event.debug "current page = #{last_page}"
         @@logger.an_event.debug "@browser.url = #{@browser.url}"
 
         if @browser.driver == @history[@history.size - 2][0]
           # on est dans la même fenetre que la fenetre où on veut aller
-          while @current_page.url != @browser.url
+          while last_page.url != @browser.url
             url = @browser.url
             @browser.go_back
             # pour gérer le retour vers une page de resultats google pour IE : lors du go_back, IE execute à nouveau le redirect Google
             # porté par le lien resultat => boucle
             # comportement différent pour Chrome/FF qui ne réexécute pas la redirection.
-            @browser.go_to(@current_page.url) if @browser.url == url
-
-            sleep 5
-
-            if @browser.engine_search.is_captcha_page?(@browser.url)
-              #--------------------------------------------------------------------------------------------------------
-              # captcha page replace previous page
-              #--------------------------------------------------------------------------------------------------------
-
-              begin
-
-                @current_page = Pages::Captcha.new(@browser, @id, @home)
-
-              rescue Exception => e
-                @@logger.an_event.error e.message
-                raise Error.new(VISITOR_NOT_GO_BACK, :error => e)
-
-              else
-                @history << [@browser.driver, @current_page]
-
-                @@logger.an_event.info "visitor #{@id} see captcha page"
-                raise Error.new(VISITOR_SEE_CAPTCHA, :values => {:type => @current_page.type})
-
-              end
-
-            end
-
+            @browser.go_to(last_page.url) if @browser.url == url
           end
 
         else
@@ -1056,27 +1022,36 @@ module Visitors
           # et on clos la fenetre ouverte par le click
           @@logger.an_event.debug "close popup #{@browser.driver.popup_name}"
           @browser.driver.close
-          @browser.driver = @history[@history.size - 2][0]
-
+          @browser.driver = @history[@history.size - 2][0].dup
         end
 
-      rescue Error => e
-        raise e
-
       rescue Exception => e
-        @@logger.an_event.error e.message
+        @@logger.an_event.error "visitor went back to previous page <#{last_page.url}> : #{e.message}"
         raise Error.new(VISITOR_NOT_GO_BACK, :error => e)
 
       else
+        @@logger.an_event.info "visitor went back to previous page <#{last_page.url}>"
 
-        @@logger.an_event.info "visitor #{@id} went back to previous page <#{@current_page.url}>"
+      end
 
+      begin
+        manage_captcha if @browser.engine_search.is_captcha_page?(@browser.url)
+
+        @current_page = @history[@history.size - 2][1].dup
+
+      rescue Exception => e
+        @@logger.an_event.error "visitor browsed previous page <#{@current_page.url}> : #{e.message}"
+        raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
+
+      else
+        #--------------------------------------------------------------------------------------------------------
+        # go back to previous page displayed
+        #--------------------------------------------------------------------------------------------------------
+        @@logger.an_event.info "visitor browsed previous page <#{@current_page.url}>"
         read(@current_page)
+
         @history << [@browser.driver, @current_page]
-        @@logger.an_event.info "visitor #{@id} read previous page <#{@current_page.url}>"
-
-      ensure
-
+        @@logger.an_event.debug "add current page to history"
 
       end
     end
@@ -1090,17 +1065,16 @@ module Visitors
         @current_page = Pages::Website.new(@visit, @browser)
 
       rescue Exception => e
-        @@logger.an_event.error e.message
+        @@logger.an_event.error "visitor browsed landing page : #{e.message}"
         raise Error.new(VISITOR_NOT_GO_TO_LANDING, :error => e)
 
       else
 
-        @@logger.an_event.info "visitor #{@id} went to landing page #{url}."
-
+        @@logger.an_event.info "visitor browsed landing page"
         read(@current_page)
-      ensure
-        @history << [@browser.driver, @current_page]
 
+        @history << [@browser.driver, @current_page]
+        @@logger.an_event.debug "add current page to history"
       end
     end
 
@@ -1115,52 +1089,67 @@ module Visitors
 
 
       rescue Exception => e
-        @@logger.an_event.error e.message
+        @@logger.an_event.error "visitor browsed referral page : #{e.message}"
         raise Error.new(VISITOR_NOT_GO_TO_REFERRAL, :error => e)
 
       else
 
-        @@logger.an_event.info "visitor #{@id} went to referral #{url.to_s}"
-
+        @@logger.an_event.info "visitor browsed referral page"
         read(@current_page)
-      ensure
-        @history << [@browser.driver, @current_page]
 
+        @history << [@browser.driver, @current_page]
+        @@logger.an_event.debug "add current page to history"
       end
     end
 
     def go_to_search_engine
+      #--------------------------------------------------------------------------------------------------------
+      # go to engine search page
+      #--------------------------------------------------------------------------------------------------------
       begin
         @@logger.an_event.debug "action #{__method__}"
 
         url = @browser.engine_search.page_url
+
         @browser.go_to(url)
+
+      rescue Exception => e
+        @@logger.an_event.error "visitor went to engine search page <#{url}> : #{e.message}"
+        raise Error.new(VISITOR_NOT_GO_TO_ENGINE_SEARCH, :error => e)
+
+      else
+        @@logger.an_event.info "visitor  went to engine search page <#{url}>"
+
+      end
+
+
+      begin
+        manage_captcha if @browser.engine_search.is_captcha_page?(@browser.url)
 
         @current_page = Pages::EngineSearch.new(@visit,
                                                 @browser)
 
       rescue Exception => e
-        @@logger.an_event.error e.message
-        raise Error.new(VISITOR_NOT_GO_TO_ENGINE_SEARCH, :error => e)
+        @@logger.an_event.error "visitor browsed enginesearch page : #{e.message}"
+        raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
 
       else
-
-        @@logger.an_event.info "visitor #{@id} went to engine search page #{url}"
-
+        #--------------------------------------------------------------------------------------------------------
+        # Page EngineSearch displayed
+        #--------------------------------------------------------------------------------------------------------
+        @@logger.an_event.info "visitor browsed enginesearch page"
         read(@current_page)
-      ensure
-        @max_count_submiting_captcha = MAX_COUNT_SUBMITING_CAPTCHA #initialisation du nombre de submiting captcha
-        # pour éviter de partir en boucle infini si on arrive pas a converntir l'image en string
 
         @history << [@browser.driver, @current_page]
+        @@logger.an_event.debug "add current page to history"
 
       end
+
     end
 
     def go_to_start_engine_search
-
       #--------------------------------------------------------------------------------------------------------
-      # Display start page
+      # Display start engine search page
       #--------------------------------------------------------------------------------------------------------
       begin
         @@logger.an_event.debug "action #{__method__}"
@@ -1170,35 +1159,33 @@ module Visitors
         @browser.display_start_page(url, @id)
 
       rescue Exception => e
-        @@logger.an_event.error e.message
-        raise Error.new(VISITOR_NOT_START_ENGINE_SEARCH, :error => e)
-
-      end
-
-
-      #--------------------------------------------------------------------------------------------------------
-      # Engine search page displayed
-      #--------------------------------------------------------------------------------------------------------
-      begin
-        @current_page = Pages::EngineSearch.new(@visit, @browser)
-
-      rescue Exception => e
-        @@logger.an_event.error e.message
+        @@logger.an_event.error "visitor went to engine search page <#{url}> : #{e.message}"
         raise Error.new(VISITOR_NOT_START_ENGINE_SEARCH, :error => e)
 
       else
-        @@logger.an_event.info "visitor #{@id} went to engine search page <#{url}>"
-
-        read(@current_page)
-
-      ensure
-        @max_count_submiting_captcha = MAX_COUNT_SUBMITING_CAPTCHA #initialisation du nombre de submiting captcha
-        # pour éviter de partir en boucle infini si on arrive pas a converntir l'image en string
-
-        @history << [@browser.driver, @current_page]
+        @@logger.an_event.info "visitor went to engine search page <#{url}>"
 
       end
 
+
+      begin
+        manage_captcha if @browser.engine_search.is_captcha_page?(@browser.url)
+
+        @current_page = Pages::EngineSearch.new(@visit,
+                                                @browser)
+
+      rescue Exception => e
+        @@logger.an_event.error "visitor browsed enginesearch page : #{e.message}"
+        raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
+
+      else
+        @@logger.an_event.info "visitor browsed enginesearch page"
+        read(@current_page)
+
+        @history << [@browser.driver, @current_page]
+        @@logger.an_event.debug "add current page to history"
+
+      end
 
     end
 
@@ -1214,16 +1201,74 @@ module Visitors
 
 
       rescue Exception => e
-        @@logger.an_event.error e.message
+        @@logger.an_event.error "visitor browsed website page : #{e.message}"
         raise Error.new(VISITOR_NOT_START_LANDING, :error => e)
 
       else
 
-        @@logger.an_event.info "visitor #{@id} went to landing page <#{url}>"
-
+        @@logger.an_event.info "visitor browsed website page"
         read(@current_page)
-      ensure
+
         @history << [@browser.driver, @current_page]
+        @@logger.an_event.debug "add current page to history"
+      end
+    end
+
+    #----------------------------------------------------------------------------------------------------------------
+    # manage_captcha
+    #----------------------------------------------------------------------------------------------------------------
+    # n'est pas une action sb_, cl_, go_to_.
+    # Elle n'apparait pas dans le script d'exécution des actions, car non programmable au moyen d'une grammaire en raison
+    # du caractère aléatoire de la survenue du captcha.
+    # inputs : RAS
+    # output : RAS
+    # VISITOR_NOT_READ_PAGE, VISITOR_NOT_SUBMIT_CAPTCHA, VISITOR_TOO_MANY_CAPTCHA
+    #----------------------------------------------------------------------------------------------------------------
+    #----------------------------------------------------------------------------------------------------------------
+    #
+    #----------------------------------------------------------------------------------------------------------------
+
+    def manage_captcha
+      max_count_submiting_captcha = MAX_COUNT_SUBMITING_CAPTCHA
+      begin
+        #--------------------------------------------------------------------------------------------------------
+        # captcha page replace a page : EngineSearch, Results
+        #--------------------------------------------------------------------------------------------------------
+        sleep 5
+        captcha_page = Pages::Captcha.new(@browser, @id, @home)
+
+        @browser.set_input_captcha(captcha_page.type, captcha_page.input, captcha_page.text)
+
+        @browser.submit(captcha_page.submit_button)
+
+      rescue Error => e
+
+        case e.code
+          when PAGE_NOT_CREATE
+            @@logger.an_event.error "visitor saw captcha page : #{e.message}"
+            raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
+
+          when BROWSER_NOT_SET_INPUT_CAPTCHA
+            @@logger.an_event.error "visitor submited captcha search <#{captcha_page.text}> : #{e.message}."
+            raise Error.new(VISITOR_NOT_SUBMIT_CAPTCHA, :error => e)
+
+          when BROWSER_NOT_SUBMIT_FORM
+            @@logger.an_event.error "visitor submited captcha search <#{captcha_page.text}> : #{e.message}."
+            max_count_submiting_captcha -= 1
+            #si la soumission du text du captcha a échoué alors, google en affiche un nouveau.
+            #le nouveau screenshot est dans un nouveau volume du flow.
+            #le captcha précédent peut être déclaré comme bad aupres de de-capcher.
+            #TODO Captchas::bad_string(id_visitor)
+            retry if max_count_submiting_captcha >= 0
+
+            raise Error.new(VISITOR_TOO_MANY_CAPTCHA, :error => e)
+
+          else
+            raise e
+
+        end
+      rescue Exception => e
+        raise e
 
       end
     end
@@ -1244,284 +1289,115 @@ module Visitors
 
       raise Error.new(ARGUMENT_UNDEFINE, :values => {:variable => "page"}) if page.nil?
 
-      @@logger.an_event.info "visitor #{@id} begin reading <#{page.url}> during #{page.sleeping_time}s"
+      @@logger.an_event.info "visitor begin reading <#{page.url}> during #{page.sleeping_time}s"
 
       sleep page.sleeping_time if $staging != "development"
 
-      @@logger.an_event.debug "visitor #{@id} finish reading on page <#{page.url}>"
+      @@logger.an_event.debug "visitor finish reading on page <#{page.url}>"
 
 
     end
 
-    def sb_captcha
 
+    def sb_final_search
+      #--------------------------------------------------------------------------------------------------------
+      # input keywords & submit search
+      #--------------------------------------------------------------------------------------------------------
       begin
         @@logger.an_event.debug "action #{__method__}"
 
-        @browser.set_input_captcha(@current_page.type, @current_page.input, @current_page.text)
+        keywords = @visit.referrer.keywords
+
+        #permet d'utiliser des méthodes differentes en fonction des moteurs de recherche qui n'identifie pas l'input
+        #des mot clé avec le même objet html
+        #le omportement de Internet Explorer/Chrome/Opera est différent donc creation d'une méthode pour gérer l'initialisation de la zone de recherche.
+        @browser.set_input_search(@current_page.type, @current_page.input, keywords)
+
+        @@logger.an_event.debug "set input search #{@current_page.type} #{@current_page.input} #{keywords}"
 
         @browser.submit(@current_page.submit_button)
 
       rescue Exception => e
-        @@logger.an_event.error "visitor #{@id} submited captcha search <#{@current_page.text}> : #{e.message}."
-        raise Error.new(VISITOR_NOT_SUBMIT_CAPTCHA, :error => e)
+        @@logger.an_event.error "visitor submited final search <#{keywords}> : #{e.message}"
+        raise Error.new(VISITOR_NOT_SUBMIT_FINAL_SEARCH, :error => e)
 
       else
-        sleep 5
-
-        if @browser.engine_search.is_captcha_page?(@browser.url)
-          #--------------------------------------------------------------------------------------------------------
-          # new captcha page replace captcha page
-          #--------------------------------------------------------------------------------------------------------
-
-          begin
-            #si la soumission du text du captcha a échoué alors, google en affiche un nouveau.
-            #le nouveau screenshot est dans un nouveau volume du flow.
-            #le captcha précédent peut être déclaré comme bad aupres de de-capcher.
-            #TODO Captchas::bad_string(id_visitor)
-
-
-            @current_page = Pages::Captcha.new(@browser, @id, @home)
-
-          rescue Exception => e
-            @@logger.an_event.error e.message
-            raise Error.new(VISITOR_NOT_SUBMIT_CAPTCHA, :error => e)
-
-          else
-            @history << [@browser.driver, @current_page]
-
-            @@logger.an_event.info "visitor #{@id} see captcha page"
-            raise Error.new(VISITOR_SEE_CAPTCHA, :values => {:type => @current_page.type})
-
-          end
-
-        else
-          @@logger.an_event.info "visitor #{@id} submited captcha search <#{@current_page.text}>."
-
-
-        end
-      ensure
-
+        @@logger.an_event.info "visitor submited final search <#{keywords}>."
 
       end
-    end
 
-    def sb_final_search
-      # si la page courante est EngineSearch alors il faut soumettre la recherche (nominal)
-      # si la page courante est Captcha alors il ne faut soumettre la recherche car cela veut dire la résolution du captcha
-      # à afficher la page de résults issue de la soumission de la recherche réalisée avant l'apparition du captcha.
-      if @current_page.is_a?(Pages::EngineSearch)
-        # on fait la recherche de keywords
-        begin
-          #--------------------------------------------------------------------------------------------------------
-          # input keywords & submit search
-          #--------------------------------------------------------------------------------------------------------
-          @@logger.an_event.debug "action #{__method__}"
-
-          keywords = @visit.referrer.keywords
-
-          #permet d'utiliser des méthodes differentes en fonction des moteurs de recherche qui n'identifie pas l'input
-          #des mot clé avec le même objet html
-          #le omportement de Internet Explorer/Chrome/Opera est différent donc creation d'une méthode pour gérer l'initialisation de la zone de recherche.
-          @browser.set_input_search(@current_page.type, @current_page.input, keywords)
-
-          @@logger.an_event.debug "set input search #{@current_page.type} #{@current_page.input} #{keywords}"
-
-          @browser.submit(@current_page.submit_button)
-
-
-        rescue Error, Exception => e
-          sleep 5
-
-          if @browser.engine_search.is_captcha_page?(@browser.url)
-            #--------------------------------------------------------------------------------------------------------
-            # captcha page replace search page
-            #--------------------------------------------------------------------------------------------------------
-
-            begin
-
-              @current_page = Pages::Captcha.new(@browser, @id, @home)
-
-            rescue Exception => e
-              @@logger.an_event.error e.message
-              raise Error.new(VISITOR_NOT_START_ENGINE_SEARCH, :error => e)
-
-            else
-              @history << [@browser.driver, @current_page]
-
-              @@logger.an_event.info "visitor #{@id} see captcha page"
-              raise Error.new(VISITOR_SEE_CAPTCHA, :values => {:type => @current_page.type})
-
-            ensure
-
-
-            end
-
-          else
-            @@logger.an_event.error "visitor #{@id} submited final search <#{keywords}> : #{e.message}"
-
-            raise Error.new(VISITOR_NOT_SUBMIT_FINAL_SEARCH, :error => e)
-          end
-
-        else
-          @@logger.an_event.info "visitor #{@id} submited final search <#{keywords}>."
-
-        end
-      end
       #--------------------------------------------------------------------------------------------------------
-      # Page Results display
+      # read Page
       #--------------------------------------------------------------------------------------------------------
       begin
+        manage_captcha if @browser.engine_search.is_captcha_page?(@browser.url)
 
-        @current_page = Pages::Results.new(@visit, @browser)
+        @current_page = Pages::Results.new(@visit,
+                                           @browser)
 
-      rescue Error, Exception => e
-        sleep 5
-
-        if @browser.engine_search.is_captcha_page?(@browser.url)
-          #--------------------------------------------------------------------------------------------------------
-          # captcha page replace results page
-          #--------------------------------------------------------------------------------------------------------
-          begin
-
-            @current_page = Pages::Captcha.new(@browser, @id, @home)
-
-          rescue Exception => e
-            @@logger.an_event.error e.message
-            raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
-
-          else
-            @history << [@browser.driver, @current_page]
-
-            @@logger.an_event.info "visitor #{@id} see captcha page"
-            raise Error.new(VISITOR_SEE_CAPTCHA, :values => {:type => @current_page.type})
-
-          end
-
-        else
-          @@logger.an_event.error "visitor #{@id} browsed results search <#{keywords}> : #{e.message}"
-
-          raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
-
-        end
+      rescue Exception => e
+        @@logger.an_event.error "visitor browsed results search : #{e.message}"
+        raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
 
       else
+        #--------------------------------------------------------------------------------------------------------
+        # Page Results displayed
+        #--------------------------------------------------------------------------------------------------------
+        @@logger.an_event.info "visitor browsed results search"
         read(@current_page)
+
         @history << [@browser.driver, @current_page]
-
-      ensure
-
+        @@logger.an_event.debug "add current page to history"
 
       end
     end
 
     def sb_search
-      # si la page courante est EngineSearch alors il faut soumettre la recherche (nominal)
-      # si la page courante est Captcha alors il ne faut soumettre la recherche car cela veut dire la résolution du captcha
-      # à afficher la page de résults issue de la soumission de la recherche réalisée avant l'apparition du captcha.
-      if @current_page.is_a?(Pages::EngineSearch)
-        # on fait la recherche de keywords
-        begin
-          #--------------------------------------------------------------------------------------------------------
-          # input keywords & submit search
-          #--------------------------------------------------------------------------------------------------------
-          @@logger.an_event.debug "action #{__method__}"
-
-          keywords = @visit.referrer.next_keyword
-
-          #permet d'utiliser des méthodes differentes en fonction des moteurs de recherche qui n'identifie pas l'input
-          #des mot clé avec le même objet html
-          #le omportement de Internet Explorer/Chrome/Opera est différent donc creation d'une méthode pour gérer l'initialisation de la zone de recerche.
-          @browser.set_input_search(@current_page.type, @current_page.input, keywords)
-
-          @@logger.an_event.debug "set input search #{@current_page.type} #{@current_page.input} #{keywords}"
-
-          @browser.submit(@current_page.submit_button)
-
-        rescue Error, Exception => e
-
-          sleep 5
-
-          if @browser.engine_search.is_captcha_page?(@browser.url)
-            #--------------------------------------------------------------------------------------------------------
-            # captcha page replace search page
-            #--------------------------------------------------------------------------------------------------------
-            begin
-
-              @current_page = Pages::Captcha.new(@browser, @id, @home)
-
-            rescue Exception => e
-              @@logger.an_event.error e.message
-              raise Error.new(VISITOR_NOT_START_ENGINE_SEARCH, :error => e)
-
-            else
-              @history << [@browser.driver, @current_page]
-
-              @@logger.an_event.info "visitor #{@id} see captcha page"
-              raise Error.new(VISITOR_SEE_CAPTCHA, :values => {:type => @current_page.type})
-
-            end
-
-          else
-            @@logger.an_event.error "visitor #{@id} submited search <#{keywords}> : #{e.message}"
-
-            raise Error.new(VISITOR_NOT_SUBMIT_FINAL_SEARCH, :error => e)
-          end
-
-        else
-
-          @@logger.an_event.info "visitor #{@id} submited search <#{keywords}>."
-
-        ensure
-
-        end
-      end
-
       #--------------------------------------------------------------------------------------------------------
-      # Page Results displayed
+      # input keywords & submit search
       #--------------------------------------------------------------------------------------------------------
-      count_retry = 0
       begin
+        @@logger.an_event.debug "action #{__method__}"
 
-        @current_page = Pages::Results.new(@visit, @browser)
+        keywords = @visit.referrer.next_keyword
 
+        #permet d'utiliser des méthodes differentes en fonction des moteurs de recherche qui n'identifie pas l'input
+        #des mot clé avec le même objet html
+        #le omportement de Internet Explorer/Chrome/Opera est différent donc creation d'une méthode pour gérer l'initialisation de la zone de recerche.
+        @browser.set_input_search(@current_page.type, @current_page.input, keywords)
 
-      rescue Error, Exception => e
-        sleep 5
+        @@logger.an_event.debug "set input search #{@current_page.type} #{@current_page.input} #{keywords}"
 
-        if @browser.engine_search.is_captcha_page?(@browser.url)
-          #--------------------------------------------------------------------------------------------------------
-          # captcha page replace results page
-          #--------------------------------------------------------------------------------------------------------
-          begin
+        @browser.submit(@current_page.submit_button)
 
-            @current_page = Pages::Captcha.new(@browser, @id, @home)
-
-          rescue Exception => e
-            @@logger.an_event.error e.message
-            raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
-
-          else
-            @history << [@browser.driver, @current_page]
-
-            @@logger.an_event.info "visitor #{@id} see captcha page"
-            raise Error.new(VISITOR_SEE_CAPTCHA, :values => {:type => @current_page.type})
-
-          end
-
-        else
-          @@logger.an_event.error "visitor #{@id} browsed results search <#{keywords}> : #{e.message}"
-
-          raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
-
-        end
+      rescue Exception => e
+        @@logger.an_event.error "visitor submited search <#{keywords}> : #{e.message}"
+        raise Error.new(VISITOR_NOT_SUBMIT_SEARCH, :error => e)
 
       else
+        @@logger.an_event.info "visitor submited search <#{keywords}>."
+
+      end
+
+      begin
+        manage_captcha if @browser.engine_search.is_captcha_page?(@browser.url)
+
+        @current_page = Pages::Results.new(@visit,
+                                           @browser)
+
+      rescue Exception => e
+        @@logger.an_event.error "visitor browsed results search"
+        raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
+
+      else
+        #--------------------------------------------------------------------------------------------------------
+        # Page Results displayed
+        #--------------------------------------------------------------------------------------------------------
+        @@logger.an_event.info "visitor browsed results search"
         read(@current_page)
+
         @history << [@browser.driver, @current_page]
-
-      ensure
-
+        @@logger.an_event.debug "add current page to history"
 
       end
     end
