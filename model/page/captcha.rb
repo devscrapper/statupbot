@@ -88,6 +88,7 @@ module Pages
                                     :type => @type,
                                     :id => @input}) unless browser.exist_element?(type, input)
 
+        @@logger.an_event.debug "page not empty"
         super(browser.url,
               browser.title,
               0,
@@ -127,7 +128,6 @@ module Pages
           raise e
 
         end
-
 
       rescue Exception => e
         @@logger.an_event.error e.message

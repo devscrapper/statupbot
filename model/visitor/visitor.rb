@@ -541,7 +541,7 @@ module Visitors
       # read Page
       #--------------------------------------------------------------------------------------------------------
       begin
-        manage_captcha if @browser.engine_search.is_captcha_page?(@browser.url)
+        manage_captcha if @browser.is_captcha_page?
 
         @current_page = Pages::Unmanage.new(@visit.advertising.advertiser.next_duration,
                                             @browser)
@@ -588,7 +588,7 @@ module Visitors
       # read Page
       #--------------------------------------------------------------------------------------------------------
       begin
-        manage_captcha if @browser.engine_search.is_captcha_page?(@browser.url)
+        manage_captcha if @browser.is_captcha_page?
 
         @current_page = Pages::Website.new(@visit, @browser)
 
@@ -652,7 +652,7 @@ module Visitors
       # read Page
       #--------------------------------------------------------------------------------------------------------
       begin
-        manage_captcha if @browser.engine_search.is_captcha_page?(@browser.url)
+        manage_captcha if @browser.is_captcha_page?
 
         @current_page = Pages::Unmanage.new(@visit.advertising.advertiser.next_duration,
                                             @browser)
@@ -713,7 +713,7 @@ module Visitors
       # read Page
       #--------------------------------------------------------------------------------------------------------
       begin
-        manage_captcha if @browser.engine_search.is_captcha_page?(@browser.url)
+        manage_captcha if @browser.is_captcha_page?
 
         @current_page = Pages::Unmanage.new(@visit.referrer.search_duration,
                                             @browser)
@@ -775,7 +775,7 @@ module Visitors
       # read Page
       #--------------------------------------------------------------------------------------------------------
       begin
-        manage_captcha if @browser.engine_search.is_captcha_page?(@browser.url)
+        manage_captcha if @browser.is_captcha_page?
 
         @current_page = Pages::Unmanage.new(@visit.referrer.surf_duration,
                                             @browser)
@@ -838,7 +838,7 @@ module Visitors
       # read Page
       #--------------------------------------------------------------------------------------------------------
       begin
-        manage_captcha if @browser.engine_search.is_captcha_page?(@browser.url)
+        manage_captcha if @browser.is_captcha_page?
 
         @current_page = Pages::Website.new(@visit, @browser)
 
@@ -880,7 +880,7 @@ module Visitors
       end
 
       begin
-        manage_captcha if @browser.engine_search.is_captcha_page?(@browser.url)
+        manage_captcha if @browser.is_captcha_page?
 
         @current_page = Pages::Results.new(@visit,
                                            @browser)
@@ -922,7 +922,7 @@ module Visitors
       end
 
       begin
-        manage_captcha if @browser.engine_search.is_captcha_page?(@browser.url)
+        manage_captcha if @browser.is_captcha_page?
 
         @current_page = Pages::Results.new(@visit,
                                            @browser)
@@ -966,7 +966,7 @@ module Visitors
       end
 
       begin
-        manage_captcha if @browser.engine_search.is_captcha_page?(@browser.url)
+        manage_captcha if @browser.is_captcha_page?
 
         @current_page = Pages::Unmanage.new(visit.referrer.duration, @browser)
 
@@ -992,11 +992,12 @@ module Visitors
       begin
         @@logger.an_event.debug "action #{__method__}"
 
-        last_page = @history[@history.size - 1][1].dup
-        @@logger.an_event.debug "last page = #{last_page}"
-        @@logger.an_event.debug "@browser.url = #{@browser.url}"
+        before_last_page = @history[@history.size - 2][1].dup
+        current_url = @browser.url
+        @@logger.an_event.debug "before_last_page  = #{before_last_page}"
+        @@logger.an_event.debug "current_url = #{current_url}"
 
-        if @browser.driver == @history[@history.size - 1][0]
+        if @browser.driver == @history[@history.size - 2][0]
           # on est dans la même fenetre que la fenetre où on veut aller
 
           #2016/08/23 : simplification du go_back : si le go_back du browser n'amene pas sur la page voulu (IE, cpatcha, ...)
@@ -1010,7 +1011,7 @@ module Visitors
           #    @browser.go_to(last_page.url) if @browser.url == url
           # end
           @browser.go_back
-          @browser.go_to(last_page.url) if @browser.url == url
+          @browser.go_to(before_last_page.url) if @browser.url == current_url
 
         else
           #on en dans 2 fenetre differente : la principale et celle ouverte par le click sur la advert
@@ -1018,20 +1019,20 @@ module Visitors
           # et on clos la fenetre ouverte par le click
           @@logger.an_event.debug "close popup #{@browser.driver.popup_name}"
           @browser.driver.close
-          @browser.driver = @history[@history.size - 1][0].dup
+          @browser.driver = @history[@history.size - 2][0].dup
         end
 
       rescue Exception => e
-        @@logger.an_event.error "visitor went back to previous page <#{last_page.url}> : #{e.message}"
+        @@logger.an_event.error "visitor went back to previous page : #{e.message}"
         raise Error.new(VISITOR_NOT_GO_BACK, :error => e)
 
       else
-        @@logger.an_event.info "visitor went back to previous page <#{last_page.url}>"
+        @@logger.an_event.info "visitor went back to previous page"
 
       end
 
       begin
-        manage_captcha if @browser.engine_search.is_captcha_page?(@browser.url)
+        manage_captcha if @browser.is_captcha_page?
 
         @current_page = @history[@history.size - 2][1].dup
 
@@ -1120,7 +1121,7 @@ module Visitors
 
 
       begin
-        manage_captcha if @browser.engine_search.is_captcha_page?(@browser.url)
+        manage_captcha if @browser.is_captcha_page?
 
         @current_page = Pages::EngineSearch.new(@visit,
                                                 @browser)
@@ -1165,7 +1166,7 @@ module Visitors
 
 
       begin
-        manage_captcha if @browser.engine_search.is_captcha_page?(@browser.url)
+        manage_captcha if @browser.is_captcha_page?
 
         @current_page = Pages::EngineSearch.new(@visit,
                                                 @browser)
@@ -1325,7 +1326,7 @@ module Visitors
       # read Page
       #--------------------------------------------------------------------------------------------------------
       begin
-        manage_captcha if @browser.engine_search.is_captcha_page?(@browser.url)
+        manage_captcha if @browser.is_captcha_page?
 
         @current_page = Pages::Results.new(@visit,
                                            @browser)
@@ -1375,7 +1376,7 @@ module Visitors
       end
 
       begin
-        manage_captcha if @browser.engine_search.is_captcha_page?(@browser.url)
+        manage_captcha if @browser.is_captcha_page?
 
         @current_page = Pages::Results.new(@visit,
                                            @browser)

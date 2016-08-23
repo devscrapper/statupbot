@@ -118,7 +118,8 @@ Trollop::die :proxy_port, "is require with proxy" if opts[:proxy_type] != "none"
 #-----------------------------------------------------------------------------------------------------------------------
 # BROWSER_NOT_FOUND_LINK         | ERR_LINK_TRACKING       | "link tracking"
 # NONE_ADVERT                    | ERR_ADVERT_TRACKING     | "advert tracking"
-# VISITOR_SEE_CAPTCHA            | ERR_CAPTCHA_SUBMITTING    | "captcha occurence"
+# VISITOR_NOT_SUBMIT_CAPTCHA     | ERR_CAPTCHA_SUBMITTING  | "captcha sumitting"
+# VISITOR_TOO_MANY_CAPTCHA       | ERR_TOO_MANY_CAPTCHA    | "too many captcha"
 #-----------------------------------------------------------------------------------------------------------------------
 OK = 0
 KO = 1
@@ -137,6 +138,7 @@ ERR_LINK_TRACKING = 13
 ERR_ADVERT_TRACKING = 14
 ERR_CAPTCHA_SUBMITTING = 15
 ERR_VISIT_EXECUTION = 16
+ERR_TOO_MANY_CAPTCHA = 17
 
 def visit_started(visit, visitor, logger)
   begin
@@ -267,11 +269,16 @@ def visitor_is_no_slave(opts, logger)
           when Visitors::Visitor::VISITOR_NOT_OPEN
             exit_status = ERR_BROWSER_OPENING
             change_visit_state(visit_details[:id], Monitoring::FAIL, logger, "browser opening")
+            begin
+              visitor.die
+
+            rescue Exception => e
+
+            end
 
           when Visitors::Visitor::VISITOR_NOT_CLOSE
             exit_status = ERR_BROWSER_CLOSING
             change_visit_state(visit_details[:id], Monitoring::FAIL, logger, "browser closing")
-
             begin
               visitor.die
 
@@ -299,6 +306,10 @@ def visitor_is_no_slave(opts, logger)
             elsif e.history.include?(Visitors::Visitor::VISITOR_NOT_SUBMIT_CAPTCHA)
               change_visit_state(visit_details[:id], Monitoring::FAIL, logger, "captcha submitting")
               exit_status = ERR_CAPTCHA_SUBMITTING
+
+            elsif e.history.include?(Visitors::Visitor::VISITOR_TOO_MANY_CAPTCHA)
+              change_visit_state(visit_details[:id], Monitoring::FAIL, logger, "too many captcha")
+              exit_status = ERR_TOO_MANY_CAPTCHA
 
             else
               exit_status = ERR_VISIT_EXECUTION
