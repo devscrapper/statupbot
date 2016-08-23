@@ -258,7 +258,7 @@ module Visitors
         @proxy.stop
 
       rescue Exception => e
-        @@logger.an_event.error e.message
+        @@logger.an_event.error "visitor  die : #{e.message}"
         raise Error.new(VISITOR_NOT_DIE, :error => e)
       else
         @@logger.an_event.info "visitor  die"
@@ -287,7 +287,7 @@ module Visitors
         FileUtils.rm_r(Dir.glob(files), :force => true)
 
       rescue Exception => e
-        @@logger.an_event.error e.message
+        @@logger.an_event.error "visitor  delete log  : #{e.message}"
         raise Error.new(LOG_VISITOR_NOT_DELETE, :error => e)
 
       else
@@ -455,11 +455,11 @@ module Visitors
         @browser.open
 
       rescue Exception => e
-        @@logger.an_event.error e.message
+        @@logger.an_event.error "visitor  open browser : #{e.message}"
         raise Error.new(VISITOR_NOT_OPEN, :error => e)
 
       else
-        @@logger.an_event.info "visitor  open his browser"
+        @@logger.an_event.info "visitor  open browser"
 
       ensure
 

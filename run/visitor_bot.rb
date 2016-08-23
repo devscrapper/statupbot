@@ -310,6 +310,7 @@ def visitor_is_no_slave(opts, logger)
               visitor.die
 
             rescue Exception => e
+
             end
 
             exit_status

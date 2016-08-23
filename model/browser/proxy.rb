@@ -226,7 +226,7 @@ module Browsers
         try_count += 1
         retry if try_count < max_try_count
 
-        @@logger.an_event.error e.message
+        @@logger.an_event.error "config files proxy Sahi is deleting : #{e.message}"
         raise Error.new(CLEAN_NOT_COMPLETE, :values => {:variable => "visitor_dir"}, :error => e)
       else
         @@logger.an_event.debug "config files proxy Sahi are deleted"
@@ -337,7 +337,7 @@ module Browsers
         Process.waitall
 
       rescue SignalException => e
-        @@logger.an_event.error e.message
+        @@logger.an_event.error "proxy Sahi #{@pid} stop : #{e.message}"
         raise Error.new(PROXY_NOT_STOP, :error => e)
 
       else
