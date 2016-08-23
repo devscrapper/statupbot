@@ -1230,7 +1230,6 @@ module Visitors
         #--------------------------------------------------------------------------------------------------------
         # captcha page replace a page : EngineSearch, Results
         #--------------------------------------------------------------------------------------------------------
-        sleep 5
         captcha_page = Pages::Captcha.new(@browser, @id, @home)
 
         @browser.set_input_captcha(captcha_page.type, captcha_page.input, captcha_page.text)

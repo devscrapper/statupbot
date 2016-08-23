@@ -29,6 +29,7 @@ module EngineSearches
 
     def is_captcha_page?(url)
       #determine si la page courant affiche un captcha bot Search
+      sleep 5
       false #TODO par defaut
     end
 
