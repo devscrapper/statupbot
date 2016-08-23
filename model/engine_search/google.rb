@@ -63,7 +63,7 @@ module EngineSearches
         found = uri.host == @fqdn_captcha
 
       ensure
-        found
+        return found
       end
     end
 

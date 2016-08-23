@@ -63,6 +63,8 @@ module Pages
         raise Error.new(ARGUMENT_UNDEFINE, :values => {:variable => "duration"}) if duration.nil?
         raise Error.new(ARGUMENT_UNDEFINE, :values => {:variable => "browser"}) if browser.nil?
 
+        sleep 5
+
         start_time = Time.now
 
         links = browser.all_links
