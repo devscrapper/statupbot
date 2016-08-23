@@ -127,9 +127,16 @@ module Pages
     def link
       #retourne un element choisit au hasard et le supprime de la liste
       #quand la liste est vide alors remonte une exception
-      link = @links.shuffle!.shift
-      raise Error.new(PAGE_NONE_LINK, :values => {:url => url}) if link.nil?
+      if @links.size > 0
+        link = @links.shuffle!.shift
+
+      else
+        raise Error.new(PAGE_NONE_LINK, :values => {:url => url})
+
+      end
+
       link
+
     end
 
     def to_s
