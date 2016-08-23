@@ -290,13 +290,13 @@ module Sahi
 
       rescue Exception => e
         try_count+=1
-        @@logger.an_event.debug "#{e.message}, try #{try_count}"
+        @@logger.an_event.debug "check_proxy, try #{try_count} : #{e.message}"
         sleep(3)
         retry if try_count < max_try_count
-        if try_count >= max_try_count
-          @@logger.an_event.fatal e.message
-          raise Error.new(SAHI_PROXY_NOT_FOUND, :error => e)
-        end
+
+        @@logger.an_event.fatal "check_proxy : #{e.message}"
+        raise Error.new(SAHI_PROXY_NOT_FOUND, :error => e)
+
       end
 
       @@logger.an_event.debug "driver #{@browser_type} find proxy sahi"
@@ -309,7 +309,7 @@ module Sahi
         exec_command("launchPreconfiguredBrowser", param)
 
       rescue Exception => e
-        @@logger.an_event.fatal e.message
+        @@logger.an_event.fatal "launchPreconfiguredBrowser : #{e.message}"
         raise Error.new(OPEN_DRIVER_FAILED, :error => e)
       end
 
@@ -322,17 +322,17 @@ module Sahi
           sleep(1)
         end
 
-        raise "browser type #{@browser_type} not ready" unless is_ready?
+        raise "browser type not ready" unless is_ready?
 
       rescue Exception => e
         @@logger.an_event.warn "try #{count_try}, #{e.message}"
         count_try-= 1
         retry if count_try >= 0
-        @@logger.an_event.fatal e.message
+        @@logger.an_event.fatal "driver open : #{e.message}"
         raise Error.new(OPEN_DRIVER_FAILED, :error => e)
 
       else
-        @@logger.an_event.debug "driver #{@browser_type} open"
+        @@logger.an_event.debug "driver open"
         #modifie le titre de la fenetre pour rechercher le pid du navigateur
         execute_step("window.document.title =" + Utils.quoted(@sahisid.to_s))
         @@logger.an_event.debug "set windows title browser #{@browser_type} with #{@sahisid.to_s}"
@@ -370,11 +370,11 @@ module Sahi
     def take_screenshot(to_absolute_path)
       #TODO update for linux
       begin
-   Win32::Screenshot::Take.of(:desktop).write!(to_absolute_path)
+        Win32::Screenshot::Take.of(:desktop).write!(to_absolute_path)
 
 
 #        Win32::Screenshot::Take.of(:window,
- #                                  hwnd: @browser_window_handle).write!(to_absolute_path)
+#                                  hwnd: @browser_window_handle).write!(to_absolute_path)
       rescue Exception => e
         Win32::Screenshot::Take.of(:desktop).write!(to_absolute_path)
       else
@@ -385,15 +385,16 @@ module Sahi
     def take_area_screenshot(to_absolute_path, coord)
       #TODO update for linux
       begin
- Win32::Screenshot::Take.of(:desktop, area: coord).write!(to_absolute_path)
+        Win32::Screenshot::Take.of(:desktop, area: coord).write!(to_absolute_path)
 
-  #      Win32::Screenshot::Take.of(:window,
-   #                                hwnd: @browser_window_handle, area: coord).write!(to_absolute_path)
+          #      Win32::Screenshot::Take.of(:window,
+          #                                hwnd: @browser_window_handle, area: coord).write!(to_absolute_path)
       rescue Exception => e
         Win32::Screenshot::Take.of(:desktop, area: coord).write!(to_absolute_path)
       else
       end
     end
+
     def resize (width, height)
       #TODO update for linux
       Window.from_handle(@browser_window_handle).resize(width,
