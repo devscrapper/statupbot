@@ -1001,20 +1001,25 @@ module Visitors
       begin
         @@logger.an_event.debug "action #{__method__}"
 
-        last_page = @history[@history.size - 2][1].dup
-        @@logger.an_event.debug "current page = #{last_page}"
+        last_page = @history[@history.size - 1][1].dup
+        @@logger.an_event.debug "last page = #{last_page}"
         @@logger.an_event.debug "@browser.url = #{@browser.url}"
 
-        if @browser.driver == @history[@history.size - 2][0]
+        if @browser.driver == @history[@history.size - 1][0]
           # on est dans la même fenetre que la fenetre où on veut aller
-          while last_page.url != @browser.url
-            url = @browser.url
-            @browser.go_back
-            # pour gérer le retour vers une page de resultats google pour IE : lors du go_back, IE execute à nouveau le redirect Google
-            # porté par le lien resultat => boucle
-            # comportement différent pour Chrome/FF qui ne réexécute pas la redirection.
-            @browser.go_to(last_page.url) if @browser.url == url
-          end
+
+          #2016/08/23 : simplification du go_back : si le go_back du browser n'amene pas sur la page voulu (IE, cpatcha, ...)
+          # alors on navigue directement vers l'url du last_page
+          #  while last_page.url != @browser.url
+          #    url = @browser.url
+          #    @browser.go_back
+          #    # pour gérer le retour vers une page de resultats google pour IE : lors du go_back, IE execute à nouveau le redirect Google
+          #    # porté par le lien resultat => boucle
+          #    # comportement différent pour Chrome/FF qui ne réexécute pas la redirection.
+          #    @browser.go_to(last_page.url) if @browser.url == url
+          # end
+          @browser.go_back
+          @browser.go_to(last_page.url) if @browser.url == url
 
         else
           #on en dans 2 fenetre differente : la principale et celle ouverte par le click sur la advert
@@ -1022,7 +1027,7 @@ module Visitors
           # et on clos la fenetre ouverte par le click
           @@logger.an_event.debug "close popup #{@browser.driver.popup_name}"
           @browser.driver.close
-          @browser.driver = @history[@history.size - 2][0].dup
+          @browser.driver = @history[@history.size - 1][0].dup
         end
 
       rescue Exception => e

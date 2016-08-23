@@ -1038,8 +1038,6 @@ module Browsers
         raise Error.new(BROWSER_NOT_FOUND_URL, :values => {:browser => name}, :error => e)
 
       else
-
-        @@logger.an_event.debug "browser #{name} found url #{url} of current page"
         url
       end
     end
