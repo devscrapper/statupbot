@@ -579,6 +579,7 @@ module Visitors
         @@logger.an_event.info "visitor browsed advertiser website page"
         read(@current_page)
 
+        ensure
         @history << [@browser.driver, @current_page]
         @@logger.an_event.debug "add current page to history"
       end
@@ -639,6 +640,7 @@ module Visitors
         @@logger.an_event.info "visitor browsed website landing page"
         read(@current_page)
 
+        ensure
         @history << [@browser.driver, @current_page]
         @@logger.an_event.debug "add current page to history"
 
@@ -702,6 +704,7 @@ module Visitors
         @@logger.an_event.info "visitor browsed unmanage page"
         read(@current_page)
 
+           ensure
         @history << [@browser.driver, @current_page]
         @@logger.an_event.debug "add current page to history"
 
@@ -777,6 +780,7 @@ module Visitors
         @@logger.an_event.info "visitor browsed unknown website page"
         read(@current_page)
 
+        ensure
         @history << [@browser.driver, @current_page]
         @@logger.an_event.debug "add current page to history"
 
@@ -837,6 +841,7 @@ module Visitors
         @@logger.an_event.info "visitor browsed unmanage page"
         read(@current_page)
 
+        ensure
         @history << [@browser.driver, @current_page]
         @@logger.an_event.debug "add current page to history"
 
@@ -898,6 +903,7 @@ module Visitors
         @@logger.an_event.info "visitor browsed website page"
         read(@current_page)
 
+        ensure
         @history << [@browser.driver, @current_page]
         @@logger.an_event.debug "add current page to history"
 
@@ -955,6 +961,7 @@ module Visitors
         @@logger.an_event.info "visitor browsed next results search page"
         read(@current_page)
 
+        ensure
         @history << [@browser.driver, @current_page]
         @@logger.an_event.debug "add current page to history"
 
@@ -1011,6 +1018,7 @@ module Visitors
         @@logger.an_event.info "visitor browsed prev results search page"
         read(@current_page)
 
+        ensure
         @history << [@browser.driver, @current_page]
         @@logger.an_event.debug "add current page to history"
 
@@ -1068,6 +1076,7 @@ module Visitors
         @@logger.an_event.info "visitor browsed referral website page"
         read(@current_page)
 
+        ensure
         @history << [@browser.driver, @current_page]
         @@logger.an_event.debug "add current page to history"
 
@@ -1158,6 +1167,7 @@ module Visitors
         @@logger.an_event.info "visitor browsed #{@current_page.class.name} page"
         read(@current_page)
 
+        ensure
         @history << [@browser.driver, @current_page]
         @@logger.an_event.debug "add current page to history"
 
@@ -1181,6 +1191,7 @@ module Visitors
         @@logger.an_event.info "visitor browsed landing page"
         read(@current_page)
 
+        ensure
         @history << [@browser.driver, @current_page]
         @@logger.an_event.debug "add current page to history"
       end
@@ -1205,6 +1216,7 @@ module Visitors
         @@logger.an_event.info "visitor browsed referral page"
         read(@current_page)
 
+        ensure
         @history << [@browser.driver, @current_page]
         @@logger.an_event.debug "add current page to history"
       end
@@ -1262,6 +1274,7 @@ module Visitors
         @@logger.an_event.info "visitor browsed enginesearch page"
         read(@current_page)
 
+        ensure
         @history << [@browser.driver, @current_page]
         @@logger.an_event.debug "add current page to history"
 
@@ -1318,6 +1331,7 @@ module Visitors
         @@logger.an_event.info "visitor browsed enginesearch page"
         read(@current_page)
 
+        ensure
         @history << [@browser.driver, @current_page]
         @@logger.an_event.debug "add current page to history"
 
@@ -1345,6 +1359,7 @@ module Visitors
         @@logger.an_event.info "visitor browsed website page"
         read(@current_page)
 
+        ensure
         @history << [@browser.driver, @current_page]
         @@logger.an_event.debug "add current page to history"
       end
@@ -1483,6 +1498,7 @@ module Visitors
         @@logger.an_event.info "visitor browsed results search page"
         read(@current_page)
 
+      ensure
         @history << [@browser.driver, @current_page]
         @@logger.an_event.debug "add current page to history"
 
@@ -1547,7 +1563,8 @@ module Visitors
         @@logger.an_event.info "visitor browsed results search page"
         read(@current_page)
 
-        @history << [@browser.driver, @current_page]
+        ensure
+          @history << [@browser.driver, @current_page]
         @@logger.an_event.debug "add current page to history"
 
       end
