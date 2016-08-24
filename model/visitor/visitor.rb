@@ -377,13 +377,13 @@ module Visitors
 
               else
                 @@logger.an_event.error "visitor  make action  <#{COMMANDS[action]}> : #{e.message}"
-                raise e  #stop la visite
+                raise e #stop la visite
             end
 
 
           rescue Exception => e
             @@logger.an_event.error "visitor  make action <#{COMMANDS[action]}> : #{e.message}"
-            raise e  #stop la visit
+            raise e #stop la visit
 
           else
             @@logger.an_event.info "visitor  executed action <#{COMMANDS[action]}>."
@@ -555,23 +555,28 @@ module Visitors
 
       rescue Errors::Error => e
         if Pages::Captcha.is_a?(@browser)
-          @@logger.an_event.info "visitor browsed captcha instead results search : #{e.message}"
+          #--------------------------------------------------------------------------------------------------------
+          # Page Captcha displayed
+          #--------------------------------------------------------------------------------------------------------
+
+          @@logger.an_event.info "visitor browsed captcha instead advertiser website page : #{e.message}"
 
           # leve les exception VISITOR_NOT_SUBMIT_CAPTCHA, VISITOR_TOO_MANY_CAPTCHA
-          manage_captcha
-          @@logger.an_event.info "visitor managed captcha, and go to browse results search"
+          # max_count_submiting_captcha est diminuer dans manage_captcha
+          max_count_submiting_captcha = manage_captcha(max_count_submiting_captcha)
+          @@logger.an_event.info "visitor managed captcha, and go to browse advertiser website page"
 
           retry
 
         end
-        @@logger.an_event.error "visitor browsed advertiser website : #{e.message}"
+        @@logger.an_event.error "visitor browsed advertiser website page : #{e.message}"
         raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
 
       else
         #--------------------------------------------------------------------------------------------------------
         # Page Unmanage Website displayed
         #--------------------------------------------------------------------------------------------------------
-        @@logger.an_event.info "visitor browsed advertiser website"
+        @@logger.an_event.info "visitor browsed advertiser website page"
         read(@current_page)
 
         @history << [@browser.driver, @current_page]
@@ -605,19 +610,33 @@ module Visitors
       # read Page
       #--------------------------------------------------------------------------------------------------------
       begin
-        manage_captcha if @browser.is_captcha_page?
 
         @current_page = Pages::Website.new(@visit, @browser)
 
       rescue Exception => e
-        @@logger.an_event.error "visitor browsed landing page on website : #{e.message}"
+        if Pages::Captcha.is_a?(@browser)
+          #--------------------------------------------------------------------------------------------------------
+          # Page Captcha displayed
+          #--------------------------------------------------------------------------------------------------------
+
+          @@logger.an_event.info "visitor browsed captcha instead website landing page : #{e.message}"
+
+          # leve les exception VISITOR_NOT_SUBMIT_CAPTCHA, VISITOR_TOO_MANY_CAPTCHA
+          # max_count_submiting_captcha est diminuer dans manage_captcha
+          max_count_submiting_captcha = manage_captcha(max_count_submiting_captcha)
+          @@logger.an_event.info "visitor managed captcha, and go to browse website landing page"
+
+          retry
+
+        end
+        @@logger.an_event.error "visitor browsed website landing page : #{e.message}"
         raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
 
       else
         #--------------------------------------------------------------------------------------------------------
         # Page Webiste displayed
         #--------------------------------------------------------------------------------------------------------
-        @@logger.an_event.info "visitor browsed landing page on website"
+        @@logger.an_event.info "visitor browsed website landing page"
         read(@current_page)
 
         @history << [@browser.driver, @current_page]
@@ -669,8 +688,6 @@ module Visitors
       # read Page
       #--------------------------------------------------------------------------------------------------------
       begin
-        manage_captcha if @browser.is_captcha_page?
-
         @current_page = Pages::Unmanage.new(@visit.advertising.advertiser.next_duration,
                                             @browser)
 
@@ -730,20 +747,34 @@ module Visitors
       # read Page
       #--------------------------------------------------------------------------------------------------------
       begin
-        manage_captcha if @browser.is_captcha_page?
 
         @current_page = Pages::Unmanage.new(@visit.referrer.search_duration,
                                             @browser)
 
       rescue Exception => e
-        @@logger.an_event.error "visitor browsed unmanage page : #{e.message}"
+        if Pages::Captcha.is_a?(@browser)
+          #--------------------------------------------------------------------------------------------------------
+          # Page Captcha displayed
+          #--------------------------------------------------------------------------------------------------------
+
+          @@logger.an_event.info "visitor browsed captcha instead unknown website page : #{e.message}"
+
+          # leve les exception VISITOR_NOT_SUBMIT_CAPTCHA, VISITOR_TOO_MANY_CAPTCHA
+          # max_count_submiting_captcha est diminuer dans manage_captcha
+          max_count_submiting_captcha = manage_captcha(max_count_submiting_captcha)
+          @@logger.an_event.info "visitor managed captcha, and go to browse unknown website page"
+
+          retry
+
+        end
+        @@logger.an_event.error "visitor browsed unknown website page : #{e.message}"
         raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
 
       else
         #--------------------------------------------------------------------------------------------------------
         # Page Results displayed
         #--------------------------------------------------------------------------------------------------------
-        @@logger.an_event.info "visitor browsed unmanage page"
+        @@logger.an_event.info "visitor browsed unknown website page"
         read(@current_page)
 
         @history << [@browser.driver, @current_page]
@@ -792,8 +823,6 @@ module Visitors
       # read Page
       #--------------------------------------------------------------------------------------------------------
       begin
-        manage_captcha if @browser.is_captcha_page?
-
         @current_page = Pages::Unmanage.new(@visit.referrer.surf_duration,
                                             @browser)
 
@@ -855,7 +884,6 @@ module Visitors
       # read Page
       #--------------------------------------------------------------------------------------------------------
       begin
-        manage_captcha if @browser.is_captcha_page?
 
         @current_page = Pages::Website.new(@visit, @browser)
 
@@ -903,24 +931,28 @@ module Visitors
 
       rescue Exception => e
         if Pages::Captcha.is_a?(@browser)
-          @@logger.an_event.info "visitor browsed captcha instead results search : #{e.message}"
+          #--------------------------------------------------------------------------------------------------------
+          # Page Captcha displayed
+          #--------------------------------------------------------------------------------------------------------
+          @@logger.an_event.info "visitor browsed captcha instead next results search page : #{e.message}"
 
           # leve les exception VISITOR_NOT_SUBMIT_CAPTCHA, VISITOR_TOO_MANY_CAPTCHA
-          manage_captcha
-          @@logger.an_event.info "visitor managed captcha, and go to browse results search"
+          # max_count_submiting_captcha est diminuer dans manage_captcha
+          max_count_submiting_captcha = manage_captcha(max_count_submiting_captcha)
+          @@logger.an_event.info "visitor managed captcha, and go to browse next results search page"
 
           retry
 
         end
 
-        @@logger.an_event.error "visitor browsed next results page : #{e.message}"
+        @@logger.an_event.error "visitor browsed next results search page : #{e.message}"
         raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
 
       else
         #--------------------------------------------------------------------------------------------------------
         # Page Results displayed
         #--------------------------------------------------------------------------------------------------------
-        @@logger.an_event.info "visitor browsed next results page"
+        @@logger.an_event.info "visitor browsed next results search page"
         read(@current_page)
 
         @history << [@browser.driver, @current_page]
@@ -955,24 +987,28 @@ module Visitors
 
       rescue Exception => e
         if Pages::Captcha.is_a?(@browser)
-          @@logger.an_event.info "visitor browsed captcha instead results search : #{e.message}"
+          #--------------------------------------------------------------------------------------------------------
+          # Page Captcha displayed
+          #--------------------------------------------------------------------------------------------------------
+          @@logger.an_event.info "visitor browsed captcha instead prev results search page : #{e.message}"
 
           # leve les exception VISITOR_NOT_SUBMIT_CAPTCHA, VISITOR_TOO_MANY_CAPTCHA
-          manage_captcha
-          @@logger.an_event.info "visitor managed captcha, and go to browse results search"
+          # max_count_submiting_captcha est diminuer dans manage_captcha
+          max_count_submiting_captcha = manage_captcha(max_count_submiting_captcha)
+          @@logger.an_event.info "visitor managed captcha, and go to browse prev results search page"
 
           retry
 
         end
 
-        @@logger.an_event.error "visitor browsed results page"
+        @@logger.an_event.error "visitor browsed prev results search page"
         raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
 
       else
         #--------------------------------------------------------------------------------------------------------
         # Page Results displayed
         #--------------------------------------------------------------------------------------------------------
-        @@logger.an_event.info "visitor browsed results page"
+        @@logger.an_event.info "visitor browsed prev results search page"
         read(@current_page)
 
         @history << [@browser.driver, @current_page]
@@ -1003,19 +1039,33 @@ module Visitors
       end
 
       begin
-        manage_captcha if @browser.is_captcha_page?
 
         @current_page = Pages::Unmanage.new(visit.referrer.duration, @browser)
 
       rescue Exception => e
-        @@logger.an_event.error "visitor browsed unmanage page : #{e.message}"
+        if Pages::Captcha.is_a?(@browser)
+          #--------------------------------------------------------------------------------------------------------
+          # Page Captcha displayed
+          #--------------------------------------------------------------------------------------------------------
+
+          @@logger.an_event.info "visitor browsed captcha instead referral website page : #{e.message}"
+
+          # leve les exception VISITOR_NOT_SUBMIT_CAPTCHA, VISITOR_TOO_MANY_CAPTCHA
+          # max_count_submiting_captcha est diminuer dans manage_captcha
+          max_count_submiting_captcha = manage_captcha(max_count_submiting_captcha)
+          @@logger.an_event.info "visitor managed captcha, and go to browse referral website page"
+
+          retry
+
+        end
+        @@logger.an_event.error "visitor browsed referral website page : #{e.message}"
         raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
 
       else
         #--------------------------------------------------------------------------------------------------------
         # Page Results displayed
         #--------------------------------------------------------------------------------------------------------
-        @@logger.an_event.info "visitor browsed referral unmanage page"
+        @@logger.an_event.info "visitor browsed referral website page"
         read(@current_page)
 
         @history << [@browser.driver, @current_page]
@@ -1070,38 +1120,42 @@ module Visitors
       end
 
       begin
-       # @current_page = @history[@history.size - 2][1].
-       # on ne reutitilise pas la page dan sl'history car cela permet de prendre en compte des changement qui
+        # @current_page = @history[@history.size - 2][1].
+        # on ne reutitilise pas la page dan sl'history car cela permet de prendre en compte des changement qui
         # aurait été apporter par le Moteur de recherche lors de la redirection post captcha
         # cela permet aussi de déclencher à nouveau la détection d'une nouveau captcha
         @current_page = Pages::Results.new(@visit,
-                                           @browser) if  before_last_page.is_a?(Pages::Results)
+                                           @browser) if before_last_page.is_a?(Pages::Results)
 
         @current_page = Pages::EngineSearch.new(@visit,
-                                           @browser) if  before_last_page.is_a?(Pages::EngineSearch)
+                                                @browser) if before_last_page.is_a?(Pages::EngineSearch)
 
         @current_page = Pages::Unmanage.new(before_last_page.duration,
-                                           @browser) if  before_last_page.is_a?(Pages::Unmanage)
+                                            @browser) if before_last_page.is_a?(Pages::Unmanage)
       rescue Exception => e
         if Pages::Captcha.is_a?(@browser)
-          @@logger.an_event.info "visitor browsed captcha instead #{@current_page.class.name} : #{e.message}"
+          #--------------------------------------------------------------------------------------------------------
+          # Page Captcha displayed
+          #--------------------------------------------------------------------------------------------------------
+          @@logger.an_event.info "visitor browsed captcha instead #{before_last_page.class.name} page : #{e.message}"
 
           # leve les exception VISITOR_NOT_SUBMIT_CAPTCHA, VISITOR_TOO_MANY_CAPTCHA
-          manage_captcha
-          @@logger.an_event.info "visitor managed captcha, and go to browse #{@current_page.class.name}"
+          # max_count_submiting_captcha est diminuer dans manage_captcha
+          max_count_submiting_captcha = manage_captcha(max_count_submiting_captcha)
+          @@logger.an_event.info "visitor managed captcha, and go to browse #{@current_page.class.name} page"
 
           retry
 
         end
 
-        @@logger.an_event.error "visitor browsed previous page <#{@current_page.url}> : #{e.message}"
+        @@logger.an_event.error "visitor browsed #{@current_page.class.name} page : #{e.message}"
         raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
 
       else
         #--------------------------------------------------------------------------------------------------------
         # go back to previous page displayed
         #--------------------------------------------------------------------------------------------------------
-        @@logger.an_event.info "visitor browsed previous page <#{@current_page.url}>"
+        @@logger.an_event.info "visitor browsed #{@current_page.class.name} page"
         read(@current_page)
 
         @history << [@browser.driver, @current_page]
@@ -1184,11 +1238,15 @@ module Visitors
 
       rescue Exception => e
         if Pages::Captcha.is_a?(@browser)
-          @@logger.an_event.info "visitor browsed captcha instead results search : #{e.message}"
+          #--------------------------------------------------------------------------------------------------------
+          # Page Captcha displayed
+          #--------------------------------------------------------------------------------------------------------
+          @@logger.an_event.info "visitor browsed captcha instead results search page : #{e.message}"
 
           # leve les exception VISITOR_NOT_SUBMIT_CAPTCHA, VISITOR_TOO_MANY_CAPTCHA
-          manage_captcha
-          @@logger.an_event.info "visitor managed captcha, and go to browse results search"
+          # max_count_submiting_captcha est diminuer dans manage_captcha
+          max_count_submiting_captcha = manage_captcha(max_count_submiting_captcha)
+          @@logger.an_event.info "visitor managed captcha, and go to browse results search page"
 
           retry
 
@@ -1239,11 +1297,15 @@ module Visitors
 
       rescue Exception => e
         if Pages::Captcha.is_a?(@browser)
-          @@logger.an_event.info "visitor browsed captcha instead results search : #{e.message}"
+          #--------------------------------------------------------------------------------------------------------
+          # Page Captcha displayed
+          #--------------------------------------------------------------------------------------------------------
+          @@logger.an_event.info "visitor browsed captcha instead results search page : #{e.message}"
 
           # leve les exception VISITOR_NOT_SUBMIT_CAPTCHA, VISITOR_TOO_MANY_CAPTCHA
-          manage_captcha
-          @@logger.an_event.info "visitor managed captcha, and go to browse results search"
+          # max_count_submiting_captcha est diminuer dans manage_captcha
+          max_count_submiting_captcha = manage_captcha(max_count_submiting_captcha)
+          @@logger.an_event.info "visitor managed captcha, and go to browse results search page"
 
           retry
 
@@ -1302,8 +1364,8 @@ module Visitors
     #
     #----------------------------------------------------------------------------------------------------------------
 
-    def manage_captcha
-      max_count_submiting_captcha = MAX_COUNT_SUBMITING_CAPTCHA
+    def manage_captcha(max_count_submiting_captcha)
+
       begin
         #--------------------------------------------------------------------------------------------------------
         # captcha page replace a page : EngineSearch, Results, Unmanage
@@ -1320,21 +1382,15 @@ module Visitors
 
       else
         @@logger.an_event.info "visitor managed captcha"
+        max_count_submiting_captcha -= 1
+        #si la soumission du text du captcha a échoué alors, google en affiche un nouveau.
+        #le nouveau screenshot est dans un nouveau volume du flow.
+        #le captcha précédent peut être déclaré comme bad aupres de de-capcher.
+        #TODO Captchas::bad_string(id_visitor)
 
-        if Pages::Captcha.is_a?(@browser)
-          @@logger.an_event.info "visitor browsed another captcha"
-          max_count_submiting_captcha -= 1
+        raise Error.new(VISITOR_TOO_MANY_CAPTCHA, :error => e) if max_count_submiting_captcha == 0
 
-          #si la soumission du text du captcha a échoué alors, google en affiche un nouveau.
-          #le nouveau screenshot est dans un nouveau volume du flow.
-          #le captcha précédent peut être déclaré comme bad aupres de de-capcher.
-          #TODO Captchas::bad_string(id_visitor)
-
-          retry if max_count_submiting_captcha >= 0
-
-          raise Error.new(VISITOR_TOO_MANY_CAPTCHA, :error => e)
-        end
-
+        max_count_submiting_captcha
 
       end
     end
@@ -1395,6 +1451,7 @@ module Visitors
       #--------------------------------------------------------------------------------------------------------
       # read Page
       #--------------------------------------------------------------------------------------------------------
+      max_count_submiting_captcha = MAX_COUNT_SUBMITING_CAPTCHA
       begin
 
         @current_page = Pages::Results.new(@visit,
@@ -1402,24 +1459,28 @@ module Visitors
 
       rescue Exception => e
         if Pages::Captcha.is_a?(@browser)
-          @@logger.an_event.info "visitor browsed captcha instead results search : #{e.message}"
+          #--------------------------------------------------------------------------------------------------------
+          # Page Captcha displayed
+          #--------------------------------------------------------------------------------------------------------
+          @@logger.an_event.info "visitor browsed captcha instead results search page: #{e.message}"
 
           # leve les exception VISITOR_NOT_SUBMIT_CAPTCHA, VISITOR_TOO_MANY_CAPTCHA
-          manage_captcha
-          @@logger.an_event.info "visitor managed captcha, and go to browse results search"
+          # max_count_submiting_captcha est diminuer dans manage_captcha
+          max_count_submiting_captcha = manage_captcha(max_count_submiting_captcha)
+          @@logger.an_event.info "visitor managed captcha, and go to browse results search page"
 
           retry
 
         end
 
-        @@logger.an_event.error "visitor browsed results search : #{e.message}"
+        @@logger.an_event.error "visitor browsed results search page : #{e.message}"
         raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
 
       else
         #--------------------------------------------------------------------------------------------------------
         # Page Results displayed
         #--------------------------------------------------------------------------------------------------------
-        @@logger.an_event.info "visitor browsed results search"
+        @@logger.an_event.info "visitor browsed results search page"
         read(@current_page)
 
         @history << [@browser.driver, @current_page]
@@ -1462,24 +1523,28 @@ module Visitors
 
       rescue Exception => e
         if Pages::Captcha.is_a?(@browser)
-          @@logger.an_event.info "visitor browsed captcha instead results search : #{e.message}"
+          #--------------------------------------------------------------------------------------------------------
+          # Page Captcha displayed
+          #--------------------------------------------------------------------------------------------------------
+          @@logger.an_event.info "visitor browsed captcha instead results search page : #{e.message}"
 
           # leve les exception VISITOR_NOT_SUBMIT_CAPTCHA, VISITOR_TOO_MANY_CAPTCHA
-          manage_captcha
-          @@logger.an_event.info "visitor managed captcha, and go to browse results search"
+          # max_count_submiting_captcha est diminuer dans manage_captcha
+          max_count_submiting_captcha = manage_captcha(max_count_submiting_captcha)
+          @@logger.an_event.info "visitor managed captcha, and go to browse results search page"
 
           retry
 
         end
 
-        @@logger.an_event.error "visitor browsed results search"
+        @@logger.an_event.error "visitor browsed results search page : #{e.message}"
         raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
 
       else
         #--------------------------------------------------------------------------------------------------------
         # Page Results displayed
         #--------------------------------------------------------------------------------------------------------
-        @@logger.an_event.info "visitor browsed results search"
+        @@logger.an_event.info "visitor browsed results search page"
         read(@current_page)
 
         @history << [@browser.driver, @current_page]
