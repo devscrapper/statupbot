@@ -58,7 +58,7 @@ module Pages
     #----------------------------------------------------------------------------------------------------------------
 
     def initialize (duration, browser)
-
+      count_try = 3
       begin
         raise Error.new(ARGUMENT_UNDEFINE, :values => {:variable => "duration"}) if duration.nil?
         raise Error.new(ARGUMENT_UNDEFINE, :values => {:variable => "browser"}) if browser.nil?
@@ -98,7 +98,15 @@ module Pages
         raise Error.new(PAGE_NONE_INSIDE_LINKS) if @inside_hostname_links.empty? and @inside_fqdn_links.empty?
 
       rescue Exception => e
-        @@logger.an_event.error e.message
+        @@logger.an_event.debug  "creation website unmanage page : #{e.message}"
+        if count_try > 0 and !Pages::Captcha.is_a?(browser)
+          count_try -= 1
+          #recharge la page courante
+          browser.reload
+          @@logger.an_event.debug "website unmanage page reloaded, try again"
+          retry
+
+        end
         raise Error.new(PAGE_NOT_CREATE, :error => e)
 
       else

@@ -60,6 +60,7 @@ module Pages
     #----------------------------------------------------------------------------------------------------------------
 
     def initialize(visit, browser)
+      count_try = 3
       begin
         raise Error.new(ARGUMENT_UNDEFINE, :values => {:variable => "visit"}) if visit.nil?
         raise Error.new(ARGUMENT_UNDEFINE, :values => {:variable => "browser"}) if browser.nil?
@@ -105,7 +106,15 @@ module Pages
         raise Error.new(PAGE_NONE_INSIDE_LINKS, :values => {:url => @uri.to_s}) if @links.empty?
 
       rescue Exception => e
-        @@logger.an_event.error e.message
+        @@logger.an_event.debug  "creation results search page : #{e.message}"
+        if count_try > 0 and !Pages::Captcha.is_a?(browser)
+          count_try -= 1
+          #recharge la page courante
+          browser.reload
+          @@logger.an_event.debug "engine search page reloaded, try again"
+          retry
+
+        end
         raise Error.new(PAGE_NOT_CREATE, :error => e)
 
       else

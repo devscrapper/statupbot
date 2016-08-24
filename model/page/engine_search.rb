@@ -57,13 +57,12 @@ module Pages
     #----------------------------------------------------------------------------------------------------------------
 
     def initialize(visit, browser)
+      count_try = 3
       begin
         raise Error.new(ARGUMENT_UNDEFINE, :values => {:variable => "visit"}) if visit.nil?
         raise Error.new(ARGUMENT_UNDEFINE, :values => {:variable => "browser"}) if browser.nil?
 
-        sleep 5
         start_time = Time.now
-
 
         @input = browser.engine_search.id_search
         @type = browser.engine_search.type_search
@@ -83,7 +82,16 @@ module Pages
               Time.now - start_time)
 
       rescue Exception => e
-        @@logger.an_event.error e.message
+        @@logger.an_event.debug  "creation engine search page : #{e.message}"
+        if count_try > 0 and !Pages::Captcha.is_a?(browser)
+          count_try -= 1
+          #recharge la page courante
+          browser.reload
+          @@logger.an_event.debug "engine search page reloaded, try again"
+          retry
+
+        end
+
         raise Error.new(PAGE_NOT_CREATE, :error => e)
 
       ensure
