@@ -869,7 +869,7 @@ module Browsers
         eval(r)
 
       rescue Exception => e
-        @@logger.an_event.fatal "set input captcha #{type} #{input} with #{captcha} : #{e.message}"
+        @@logger.an_event.error "set input captcha #{type} #{input} with #{captcha} : #{e.message}"
         raise Error.new(BROWSER_NOT_SET_INPUT_CAPTCHA, :values => {:browser => name, :type => type, :input => input, :keywords => captcha}, :error => e)
 
       else

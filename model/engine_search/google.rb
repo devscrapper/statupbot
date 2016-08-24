@@ -52,19 +52,18 @@ module EngineSearches
     def is_captcha_page?(url)
       #determine si la page courant affiche un captcha bot Search
       sleep 5 # attend que la page se raffraichisse et la zone de l'url du browser aussi.
-      found = false
+
       begin
 
         uri = Addressable::URI.parse(url)
-
-      rescue Exception => e
-
-      else
         found = uri.host == @fqdn_captcha
 
-      ensure
-        return found
+      rescue Exception => e
+        found = false
+
       end
+
+      found
     end
 
     def links(body)

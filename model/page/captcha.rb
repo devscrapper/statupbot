@@ -88,7 +88,7 @@ module Pages
                                     :type => @type,
                                     :id => @input}) unless browser.exist_element?(type, input)
 
-        @@logger.an_event.debug "page not empty"
+        @@logger.an_event.debug "captcha page not empty"
         super(browser.url,
               browser.title,
               0,
@@ -115,22 +115,23 @@ module Pages
         @@logger.an_event.debug "captcha converted to string : #{@text}"
 
       rescue Error => e
-        @@logger.an_event.debug "captcha page empty, try #{count_try}"
-        count_try -= 1
 
         if e.code == PAGE_NONE_ELEMENT and count_try > 0
+          @@logger.an_event.debug "captcha page empty, try #{count_try}"
+          count_try -= 1
           #recharge la page courante
           browser.reload
-          @@logger.an_event.debug "reload captcha page"
+          @@logger.an_event.debug "captcha page reloaded, try again"
           retry
-
-        else
-          raise e
 
         end
 
+        @@logger.an_event.error "captcha converted to string : #{e.message}"
+        raise Error.new(PAGE_NOT_CREATE, :error => e)
+
       rescue Exception => e
-        @@logger.an_event.error e.message
+
+        @@logger.an_event.error "captcha converted to string : #{e.message}"
         raise Error.new(PAGE_NOT_CREATE, :error => e)
 
       else
@@ -139,6 +140,7 @@ module Pages
         #   screenshot_file.delete
         # end
         # les screenshot ou les captcha seront supprimé par la suppression du repertoire d"execution du visitor lors de l'hinume"
+        @@logger.an_event.info "captcha converted to string : #{@text}"
 
       ensure
 
@@ -146,6 +148,19 @@ module Pages
 
       end
 
+    end
+
+    def self.is_a?(browser)
+      current_url = browser.url
+      bool = browser.engine_search.is_captcha_page?(current_url)
+      if bool
+        @@logger.an_event.info "current url #{current_url} is captcha page"
+
+      else
+        @@logger.an_event.info "current url #{current_url} not captcha page"
+
+      end
+      bool
     end
 
     def to_s

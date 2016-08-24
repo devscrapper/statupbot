@@ -81,7 +81,8 @@ module Visitors
                 "I" => "cl_on_referral",
                 "0" => "sb_search",
                 "2" => "sb_search",
-                "1" => "sb_final_search"}
+                "1" => "sb_final_search",
+                "3" => "manage_captcha"}
 
     MAX_COUNT_SUBMITING_CAPTCHA = 3 # nombre max de submission de captcha
     #----------------------------------------------------------------------------------------------------------------
@@ -363,39 +364,47 @@ module Visitors
                 count_actions +=1
                 Monitoring.page_browse(@visit.id, script)
 
+              when VISITOR_NOT_SUBMIT_CAPTCHA, VISITOR_TOO_MANY_CAPTCHA
+                # un captcha est survenu, il a été impossible de le gerer
+                # ajout de l'action '3' dans le script pour tracer la console qu'un captcha est survenu
+                # monitoring vers la console du script
+                # arret de l'execution du script et donc de la visit
+                script.insert(count_actions + 1, "3")
+                @@logger.an_event.info "visitor stop visit because captcha"
+                count_actions +=1
+                Monitoring.page_browse(@visit.id, script)
+                raise e #stop la visite
+
               else
                 @@logger.an_event.error "visitor  make action  <#{COMMANDS[action]}> : #{e.message}"
-                raise Error.new(VISITOR_NOT_FULL_EXECUTE_VISIT, :error => e)
+                raise e  #stop la visite
             end
 
 
           rescue Exception => e
-            take_screenshot(count_actions, action)
             @@logger.an_event.error "visitor  make action <#{COMMANDS[action]}> : #{e.message}"
-            raise Error.new(VISITOR_NOT_FULL_EXECUTE_VISIT, :error => e)
+            raise e  #stop la visit
 
           else
             @@logger.an_event.info "visitor  executed action <#{COMMANDS[action]}>."
             Monitoring.page_browse(@visit.id, script)
-            take_screenshot(count_actions, action)
             count_actions +=1
 
           ensure
+            take_screenshot(count_actions, action)
             @@logger.an_event.info "visitor  executed #{count_actions}/#{script.size}(#{(count_actions * 100 /script.size).round(0)}%) actions."
+
           end
 
         end
 
 
       rescue Exception => e
-        take_screenshot(count_actions, action)
-        @@logger.an_event.error e.message
+        @@logger.an_event.error "visitor execute visit : #{e.message}"
         raise Error.new(VISITOR_NOT_FULL_EXECUTE_VISIT, :error => e)
 
       else
-        @@logger.an_event.info "visitor  execute visit."
-
-      ensure
+        @@logger.an_event.info "visitor execute visit."
 
       end
     end
@@ -469,7 +478,6 @@ module Visitors
     private
 
 
-
     # permet de choisir un link en s'assurant que ce link n'est pas un lien comme déja identifié ne fonctionnant pas car
     # il apprtient à la liste des failed_links connnu du visitor
     # les links déjà parcourus ne sont pas éliminé du choix car un visitor peut avoir envie
@@ -541,12 +549,21 @@ module Visitors
       # read Page
       #--------------------------------------------------------------------------------------------------------
       begin
-        manage_captcha if @browser.is_captcha_page?
 
         @current_page = Pages::Unmanage.new(@visit.advertising.advertiser.next_duration,
                                             @browser)
 
       rescue Errors::Error => e
+        if Pages::Captcha.is_a?(@browser)
+          @@logger.an_event.info "visitor browsed captcha instead results search : #{e.message}"
+
+          # leve les exception VISITOR_NOT_SUBMIT_CAPTCHA, VISITOR_TOO_MANY_CAPTCHA
+          manage_captcha
+          @@logger.an_event.info "visitor managed captcha, and go to browse results search"
+
+          retry
+
+        end
         @@logger.an_event.error "visitor browsed advertiser website : #{e.message}"
         raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
 
@@ -880,12 +897,22 @@ module Visitors
       end
 
       begin
-        manage_captcha if @browser.is_captcha_page?
 
         @current_page = Pages::Results.new(@visit,
                                            @browser)
 
       rescue Exception => e
+        if Pages::Captcha.is_a?(@browser)
+          @@logger.an_event.info "visitor browsed captcha instead results search : #{e.message}"
+
+          # leve les exception VISITOR_NOT_SUBMIT_CAPTCHA, VISITOR_TOO_MANY_CAPTCHA
+          manage_captcha
+          @@logger.an_event.info "visitor managed captcha, and go to browse results search"
+
+          retry
+
+        end
+
         @@logger.an_event.error "visitor browsed next results page : #{e.message}"
         raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
 
@@ -922,12 +949,22 @@ module Visitors
       end
 
       begin
-        manage_captcha if @browser.is_captcha_page?
 
         @current_page = Pages::Results.new(@visit,
                                            @browser)
 
       rescue Exception => e
+        if Pages::Captcha.is_a?(@browser)
+          @@logger.an_event.info "visitor browsed captcha instead results search : #{e.message}"
+
+          # leve les exception VISITOR_NOT_SUBMIT_CAPTCHA, VISITOR_TOO_MANY_CAPTCHA
+          manage_captcha
+          @@logger.an_event.info "visitor managed captcha, and go to browse results search"
+
+          retry
+
+        end
+
         @@logger.an_event.error "visitor browsed results page"
         raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
 
@@ -1010,8 +1047,8 @@ module Visitors
           #    # comportement différent pour Chrome/FF qui ne réexécute pas la redirection.
           #    @browser.go_to(last_page.url) if @browser.url == url
           # end
-          @browser.go_back
-          @browser.go_to(before_last_page.url) if @browser.url == current_url
+          # simplification complete du go_back
+          @browser.go_to(before_last_page.url)
 
         else
           #on en dans 2 fenetre differente : la principale et celle ouverte par le click sur la advert
@@ -1023,6 +1060,7 @@ module Visitors
         end
 
       rescue Exception => e
+
         @@logger.an_event.error "visitor went back to previous page : #{e.message}"
         raise Error.new(VISITOR_NOT_GO_BACK, :error => e)
 
@@ -1032,11 +1070,30 @@ module Visitors
       end
 
       begin
-        manage_captcha if @browser.is_captcha_page?
+       # @current_page = @history[@history.size - 2][1].
+       # on ne reutitilise pas la page dan sl'history car cela permet de prendre en compte des changement qui
+        # aurait été apporter par le Moteur de recherche lors de la redirection post captcha
+        # cela permet aussi de déclencher à nouveau la détection d'une nouveau captcha
+        @current_page = Pages::Results.new(@visit,
+                                           @browser) if  before_last_page.is_a?(Pages::Results)
 
-        @current_page = @history[@history.size - 2][1].dup
+        @current_page = Pages::EngineSearch.new(@visit,
+                                           @browser) if  before_last_page.is_a?(Pages::EngineSearch)
 
+        @current_page = Pages::Unmanage.new(before_last_page.duration,
+                                           @browser) if  before_last_page.is_a?(Pages::Unmanage)
       rescue Exception => e
+        if Pages::Captcha.is_a?(@browser)
+          @@logger.an_event.info "visitor browsed captcha instead #{@current_page.class.name} : #{e.message}"
+
+          # leve les exception VISITOR_NOT_SUBMIT_CAPTCHA, VISITOR_TOO_MANY_CAPTCHA
+          manage_captcha
+          @@logger.an_event.info "visitor managed captcha, and go to browse #{@current_page.class.name}"
+
+          retry
+
+        end
+
         @@logger.an_event.error "visitor browsed previous page <#{@current_page.url}> : #{e.message}"
         raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
 
@@ -1121,12 +1178,22 @@ module Visitors
 
 
       begin
-        manage_captcha if @browser.is_captcha_page?
 
         @current_page = Pages::EngineSearch.new(@visit,
                                                 @browser)
 
       rescue Exception => e
+        if Pages::Captcha.is_a?(@browser)
+          @@logger.an_event.info "visitor browsed captcha instead results search : #{e.message}"
+
+          # leve les exception VISITOR_NOT_SUBMIT_CAPTCHA, VISITOR_TOO_MANY_CAPTCHA
+          manage_captcha
+          @@logger.an_event.info "visitor managed captcha, and go to browse results search"
+
+          retry
+
+        end
+
         @@logger.an_event.error "visitor browsed enginesearch page : #{e.message}"
         raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
 
@@ -1166,12 +1233,22 @@ module Visitors
 
 
       begin
-        manage_captcha if @browser.is_captcha_page?
 
         @current_page = Pages::EngineSearch.new(@visit,
                                                 @browser)
 
       rescue Exception => e
+        if Pages::Captcha.is_a?(@browser)
+          @@logger.an_event.info "visitor browsed captcha instead results search : #{e.message}"
+
+          # leve les exception VISITOR_NOT_SUBMIT_CAPTCHA, VISITOR_TOO_MANY_CAPTCHA
+          manage_captcha
+          @@logger.an_event.info "visitor managed captcha, and go to browse results search"
+
+          retry
+
+        end
+
         @@logger.an_event.error "visitor browsed enginesearch page : #{e.message}"
         raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
 
@@ -1219,7 +1296,7 @@ module Visitors
     # du caractère aléatoire de la survenue du captcha.
     # inputs : RAS
     # output : RAS
-    # VISITOR_NOT_READ_PAGE, VISITOR_NOT_SUBMIT_CAPTCHA, VISITOR_TOO_MANY_CAPTCHA
+    # VISITOR_NOT_SUBMIT_CAPTCHA, VISITOR_TOO_MANY_CAPTCHA
     #----------------------------------------------------------------------------------------------------------------
     #----------------------------------------------------------------------------------------------------------------
     #
@@ -1229,7 +1306,7 @@ module Visitors
       max_count_submiting_captcha = MAX_COUNT_SUBMITING_CAPTCHA
       begin
         #--------------------------------------------------------------------------------------------------------
-        # captcha page replace a page : EngineSearch, Results
+        # captcha page replace a page : EngineSearch, Results, Unmanage
         #--------------------------------------------------------------------------------------------------------
         captcha_page = Pages::Captcha.new(@browser, @id, @home)
 
@@ -1237,34 +1314,27 @@ module Visitors
 
         @browser.submit(captcha_page.submit_button)
 
-      rescue Error => e
-
-        case e.code
-          when PAGE_NOT_CREATE
-            @@logger.an_event.error "visitor saw captcha page : #{e.message}"
-            raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
-
-          when BROWSER_NOT_SET_INPUT_CAPTCHA
-            @@logger.an_event.error "visitor submited captcha search <#{captcha_page.text}> : #{e.message}."
-            raise Error.new(VISITOR_NOT_SUBMIT_CAPTCHA, :error => e)
-
-          when BROWSER_NOT_SUBMIT_FORM
-            @@logger.an_event.error "visitor submited captcha search <#{captcha_page.text}> : #{e.message}."
-            max_count_submiting_captcha -= 1
-            #si la soumission du text du captcha a échoué alors, google en affiche un nouveau.
-            #le nouveau screenshot est dans un nouveau volume du flow.
-            #le captcha précédent peut être déclaré comme bad aupres de de-capcher.
-            #TODO Captchas::bad_string(id_visitor)
-            retry if max_count_submiting_captcha >= 0
-
-            raise Error.new(VISITOR_TOO_MANY_CAPTCHA, :error => e)
-
-          else
-            raise e
-
-        end
       rescue Exception => e
-        raise e
+        @@logger.an_event.error "visitor managed captcha : #{e.message}."
+        raise Error.new(VISITOR_NOT_SUBMIT_CAPTCHA, :error => e)
+
+      else
+        @@logger.an_event.info "visitor managed captcha"
+
+        if Pages::Captcha.is_a?(@browser)
+          @@logger.an_event.info "visitor browsed another captcha"
+          max_count_submiting_captcha -= 1
+
+          #si la soumission du text du captcha a échoué alors, google en affiche un nouveau.
+          #le nouveau screenshot est dans un nouveau volume du flow.
+          #le captcha précédent peut être déclaré comme bad aupres de de-capcher.
+          #TODO Captchas::bad_string(id_visitor)
+
+          retry if max_count_submiting_captcha >= 0
+
+          raise Error.new(VISITOR_TOO_MANY_CAPTCHA, :error => e)
+        end
+
 
       end
     end
@@ -1326,12 +1396,22 @@ module Visitors
       # read Page
       #--------------------------------------------------------------------------------------------------------
       begin
-        manage_captcha if @browser.is_captcha_page?
 
         @current_page = Pages::Results.new(@visit,
                                            @browser)
 
       rescue Exception => e
+        if Pages::Captcha.is_a?(@browser)
+          @@logger.an_event.info "visitor browsed captcha instead results search : #{e.message}"
+
+          # leve les exception VISITOR_NOT_SUBMIT_CAPTCHA, VISITOR_TOO_MANY_CAPTCHA
+          manage_captcha
+          @@logger.an_event.info "visitor managed captcha, and go to browse results search"
+
+          retry
+
+        end
+
         @@logger.an_event.error "visitor browsed results search : #{e.message}"
         raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
 
@@ -1376,12 +1456,22 @@ module Visitors
       end
 
       begin
-        manage_captcha if @browser.is_captcha_page?
 
         @current_page = Pages::Results.new(@visit,
                                            @browser)
 
       rescue Exception => e
+        if Pages::Captcha.is_a?(@browser)
+          @@logger.an_event.info "visitor browsed captcha instead results search : #{e.message}"
+
+          # leve les exception VISITOR_NOT_SUBMIT_CAPTCHA, VISITOR_TOO_MANY_CAPTCHA
+          manage_captcha
+          @@logger.an_event.info "visitor managed captcha, and go to browse results search"
+
+          retry
+
+        end
+
         @@logger.an_event.error "visitor browsed results search"
         raise Error.new(VISITOR_NOT_READ_PAGE, :error => e)
 
@@ -1397,7 +1487,8 @@ module Visitors
 
       end
     end
-        #-----------------------------------------------------------------------------------------------------------------
+
+    #-----------------------------------------------------------------------------------------------------------------
     # take_screenshot
     #-----------------------------------------------------------------------------------------------------------------
     # input : none
