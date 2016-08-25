@@ -154,9 +154,11 @@ module Browsers
         click_on(start_url)
 
       rescue Exception => e
+        @@logger.an_event.debug "#{name} display start page : #{e.message}"
         raise e
+
       else
-        @@logger.an_event.debug "#{name} display start page #{start_url}"
+        @@logger.an_event.debug "#{name} display start page"
 
       ensure
 

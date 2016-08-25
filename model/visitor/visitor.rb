@@ -462,13 +462,14 @@ module Visitors
       begin
 
         @browser.open
+        @browser.resize
 
       rescue Exception => e
-        @@logger.an_event.error "visitor  open browser : #{e.message}"
+        @@logger.an_event.error "visitor  open and resize browser : #{e.message}"
         raise Error.new(VISITOR_NOT_OPEN, :error => e)
 
       else
-        @@logger.an_event.info "visitor  open browser"
+        @@logger.an_event.info "visitor  open and resize browser"
 
       ensure
 

@@ -367,6 +367,14 @@ module Sahi
       fetch("location.reload(true)")
     end
 
+    def resize (width, height)
+      #TODO update for linux
+      Window.from_handle(@browser_window_handle).resize(width,
+                                                        height)
+      Window.from_handle(@browser_window_handle).move(0,
+                                                      0)
+    end
+
     def take_screenshot(to_absolute_path)
       #TODO update for linux
       begin
@@ -395,13 +403,10 @@ module Sahi
       end
     end
 
-    def resize (width, height)
-      #TODO update for linux
-      Window.from_handle(@browser_window_handle).resize(width,
-                                                        height)
-      Window.from_handle(@browser_window_handle).move(0,
-                                                      0)
+    def title
+      fetch("window.document.title")
     end
+
 
     private
     def get_pid_browser
@@ -441,7 +446,23 @@ module Sahi
     end
 
     def get_handle_window_browser
-      @browser_window_handle = Window.find(:title => /#{@sahisid.to_s}/).first.handle
+      begin
+        windows_lst = Window.find(:title => /#{@sahisid.to_s}/, :pid => @browser_pid)
+        @@logger.an_event.debug "list windows #{windows_lst}"
+
+        window = windows_lst.first
+        @@logger.an_event.debug "choose first window #{window}"
+
+        @browser_window_handle = window.handle
+
+      rescue Exception => e
+        @@logger.an_event.error "browser windows handle #{e.message}"
+
+      else
+        @@logger.an_event.debug "browser windows handle #{@browser_window_handle}"
+
+      end
+      @browser_window_handle
     end
   end # Browser
 

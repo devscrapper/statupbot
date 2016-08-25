@@ -270,6 +270,7 @@ def visitor_is_no_slave(opts, logger)
             exit_status = ERR_BROWSER_OPENING
             change_visit_state(visit_details[:id], Monitoring::FAIL, logger, "browser opening")
             begin
+              visitor.close_browser if e.history.include?(Browsers::Browser::BROWSER_NOT_RESIZE)
               visitor.die
 
             rescue Exception => e
@@ -277,6 +278,7 @@ def visitor_is_no_slave(opts, logger)
             end
 
           when Visitors::Visitor::VISITOR_NOT_CLOSE
+            # le browser est tj actif
             exit_status = ERR_BROWSER_CLOSING
             change_visit_state(visit_details[:id], Monitoring::FAIL, logger, "browser closing")
             begin

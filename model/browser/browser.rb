@@ -52,6 +52,7 @@ module Browsers
     BROWSER_NOT_SET_INPUT_CAPTCHA = 323
     BROWSER_NOT_TAKE_CAPTCHA = 324
     BROWSER_NOT_RELOAD = 325
+    BROWSER_NOT_RESIZE = 326
     #----------------------------------------------------------------------------------------------------------------
     # constant
     #----------------------------------------------------------------------------------------------------------------
@@ -284,7 +285,7 @@ module Browsers
     #
     #-----------------------------------------------------------------------------------------------------------------
     def click_on(link, accept_popup = false)
-      @@logger.an_event.debug "link #{link}"
+      @@logger.an_event.debug "link to click #{link}"
 
       begin
         raise Error.new(ARGUMENT_UNDEFINE, :values => {:variable => "link"}) if link.nil?
@@ -701,14 +702,12 @@ module Browsers
 
       begin
         @driver.open
-        @driver.resize(@width.to_i, @height.to_i)
 
       rescue Exception => e
-        @@logger.an_event.error e.message
+        @@logger.an_event.error"browser #{name} open : #{e.message}"
         raise Error.new(BROWSER_NOT_OPEN, :values => {:browser => name}, :error => e)
 
       else
-
         @@logger.an_event.debug "browser #{name} open"
 
       ensure
@@ -783,7 +782,33 @@ module Browsers
 
       end
     end
+        #-----------------------------------------------------------------------------------------------------------------
+    # resize
+    #-----------------------------------------------------------------------------------------------------------------
+    # input : none
+    # output : none
+    # exception :
+    # StandardError :
+    #-----------------------------------------------------------------------------------------------------------------
+    #-----------------------------------------------------------------------------------------------------------------
+    def resize
+      begin
 
+        @driver.resize(@width.to_i, @height.to_i)
+
+      rescue Exception => e
+        @@logger.an_event.error"browser #{name} resize : #{e.message}"
+        raise Error.new(BROWSER_NOT_RESIZE, :values => {:browser => name}, :error => e)
+
+      else
+
+        @@logger.an_event.debug "browser #{name} resize"
+
+      ensure
+
+      end
+
+    end
     #----------------------------------------------------------------------------------------------------------------
     # searchbox
     #----------------------------------------------------------------------------------------------------------------
@@ -1016,11 +1041,10 @@ module Browsers
     def title
 
       begin
-        title = nil
-        title = @driver.title
+        title ||= @driver.title
 
       rescue Exception => e
-        @@logger.an_event.error e.message
+        @@logger.an_event.error "browser #{name} found title : #{e.message}"
         raise Error.new(BROWSER_NOT_FOUND_TITLE, :values => {:browser => name}, :error => e)
 
       else
