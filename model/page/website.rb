@@ -62,6 +62,7 @@ module Pages
 
     def initialize(visit, browser)
       count_try = 3
+      sleep 5
       begin
         raise Error.new(ARGUMENT_UNDEFINE, :values => {:variable => "visit"}) if visit.nil?
         raise Error.new(ARGUMENT_UNDEFINE, :values => {:variable => "browser"}) if browser.nil?

@@ -100,6 +100,7 @@ module Pages
     #----------------------------------------------------------------------------------------------------------------
 
     def initialize(href, title, duration, duration_search_link=0)
+
       @@logger ||= Logging::Log.new(self, :staging => $staging, :id_file => File.basename(__FILE__, ".rb"), :debugging => $debugging)
 
       @@logger.an_event.debug "href #{href}"

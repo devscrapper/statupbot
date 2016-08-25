@@ -59,6 +59,7 @@ module Pages
 
     def initialize (duration, browser)
       count_try = 3
+      sleep 5
       begin
         raise Error.new(ARGUMENT_UNDEFINE, :values => {:variable => "duration"}) if duration.nil?
         raise Error.new(ARGUMENT_UNDEFINE, :values => {:variable => "browser"}) if browser.nil?
