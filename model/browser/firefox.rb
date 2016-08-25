@@ -32,6 +32,7 @@ module Browsers
               DATA_URI,
               visitor_dir)
       rescue Exception => e
+        @@logger.an_event.error "#{name} initialize : #{e.message}"
         raise e
 
       else
@@ -95,7 +96,7 @@ module Browsers
         file_custom.gsub!(/width_browser/, @width)
         File.write(file_name, file_custom)
       rescue Exception => e
-        @@logger.an_event.fatal e.message
+        @@logger.an_event.error "#{name} customize config file proxy sahi : #{e.message}"
         raise Error.new(BROWSER_NOT_CUSTOM_FILE, :values => {:browser => name}, :error => e)
 
       else
@@ -137,7 +138,7 @@ module Browsers
         raise Error.new(ARGUMENT_UNDEFINE, :values => {:variable => "start_url"}) if start_url.nil? or start_url ==""
         raise Error.new(ARGUMENT_UNDEFINE, :values => {:variable => "visitor_id"}) if visitor_id.nil? or visitor_id == ""
 
-        window_parameters = "width=#{@width},height=#{@height},fullscreen=no,left=0,menubar=yes,scrollbars=yes,status=yes,titlebar=yes,toolbar=yes,top=0"
+        window_parameters = "fullscreen=no,left=0,menubar=yes,scrollbars=yes,status=yes,titlebar=yes,toolbar=yes"
         @@logger.an_event.debug "windows parameters : #{window_parameters}"
 
         encode_start_url = Addressable::URI.encode_component(start_url, Addressable::URI::CharacterClasses::UNRESERVED)
@@ -149,6 +150,7 @@ module Browsers
         super(start_page_visit_url, window_parameters)
 
       rescue Exception => e
+        @@logger.an_event.error "#{name} display start page #{start_url} : #{e.message}"
         raise e
 
       else

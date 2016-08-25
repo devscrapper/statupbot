@@ -355,11 +355,11 @@ module Browsers
         url_before = url
         @@logger.an_event.debug "url before #{url_before}"
 
+        # on attend tq que les url_before et url courante sont identiques, au max 10s.
         link_element.click
-
-        # on attend tq que les url_before et url courante sont identiques, au max 5s.
-        @driver.wait(10)
         @@logger.an_event.debug "click on #{link_element}"
+
+
 
         # on autorise d'ouvrir un nouvel onglet ou fenetre que pour les pub qui le demande sinon les autres liens
         #restent dans leur fenetre.
@@ -379,15 +379,16 @@ module Browsers
           end
 
         else
+          @driver.wait(10) { url_before == url           }
           raise "same url after click : #{url_before}" if url_before == url
 
         end
 
       rescue Exception => e
-        @@logger.an_event.warn e.message
+        @@logger.an_event.warn "browser #{name} click on url, try #{count} : #{e.message}"
         count -= 1
         retry if count > 0
-        @@logger.an_event.error e.message
+        @@logger.an_event.error "browser #{name} click on url : #{e.message}"
         raise Error.new(BROWSER_NOT_CLICK, :values => {:browser => name}, :error => e) if count > 0
         raise Error.new(BROWSER_CLICK_MAX_COUNT, :values => {:browser => name, :link => url_before}, :error => e) unless count > 0
 
@@ -424,6 +425,7 @@ module Browsers
         raise Error.new(ARGUMENT_UNDEFINE, :values => {:variable => "url_start_page"}) if url_start_page.nil? or url_start_page == ""
 
         old_page_title = @driver.title
+        @@logger.an_event.debug "old_page_title : #{old_page_title}"
 
         @driver.display_start_page(url_start_page, window_parameters)
 
@@ -436,13 +438,12 @@ module Browsers
         raise Error.new(BROWSER_NOT_CONNECT_TO_SERVER, :values => {:browser => name, :domain => hostname}) if @driver.div("error_connect").exists?
 
         new_page_title = @driver.title
+        @@logger.an_event.debug "new_page_title : #{new_page_title}"
         #erreur sahi...on est tj sur la page initiale de sahi
         raise Error.new(BROWSER_NOT_ACCESS_URL, :values => {:browser => name, :url => url_start_page}) if new_page_title == old_page_title
 
-        @@logger.an_event.debug "browser #{name} open start page #{url}"
-
       rescue Exception => e
-        @@logger.an_event.fatal e.message
+        @@logger.an_event.error "browser #{name} display start page : #{e.message}"
 
         raise Error.new(BROWSER_NOT_DISPLAY_START_PAGE, :values => {:browser => name, :page => url_start_page}, :error => e)
 
@@ -529,12 +530,12 @@ module Browsers
         end
 
       rescue Exception => e
-        @@logger.an_event.error e.message
+        @@logger.an_event.error "browser #{name} found link : #{e.message}"
 
         raise Error.new(BROWSER_NOT_FOUND_LINK, :values => {:domain => "", :identifier => link.to_s}, :error => e)
 
       else
-        @@logger.an_event.debug "browser #{name} found link #{link.to_s}"
+        @@logger.an_event.debug "browser #{name} found link"
 
       ensure
 
@@ -554,7 +555,7 @@ module Browsers
         @driver.back
 
       rescue Exception => e
-        @@logger.an_event.error e.message
+        @@logger.an_event.error "browser #{name} go back : #{e.message}"
         raise Error.new(BROWSER_NOT_GO_BACK, :values => {:browser => name}, :error => e)
 
       else
@@ -579,7 +580,7 @@ module Browsers
         @driver.navigate_to(url)
 
       rescue Exception => e
-        @@logger.an_event.error e.message
+        @@logger.an_event.error "browser #{name} go to #{url} : #{e.message}"
         raise Error.new(BROWSER_NOT_GO_TO, :values => {:browser => name, :url => url}, :error => e)
 
       else
@@ -639,7 +640,7 @@ module Browsers
         customize_properties (visitor_dir)
 
       rescue Exception => e
-        @@logger.an_event.fatal e.message
+        @@logger.an_event.error "browser #{name} initialize : #{e.message}"
         raise e
 
       else
@@ -771,7 +772,7 @@ module Browsers
         @driver.reload
 
       rescue Exception => e
-        @@logger.an_event.error e.message
+        @@logger.an_event.error "browser #{name} reload #{url}"
         raise Error.new(BROWSER_NOT_RELOAD, :values => {:url => url}, :error => e)
 
       else
@@ -976,7 +977,7 @@ module Browsers
 
       else
 
-        @@logger.an_event.info "browser #{name} take screen shot"
+        @@logger.an_event.info "browser #{name} take screen shot #{output_file.basename}"
 
       ensure
 
@@ -1074,7 +1075,7 @@ module Browsers
         raise "url empty" if url.empty? or url.nil?
 
       rescue Exception => e
-        @@logger.an_event.warn e.message
+        @@logger.an_event.warn "try #{count} : #{e.message}"
         count += 1
         sleep 1
         retry if count < 5

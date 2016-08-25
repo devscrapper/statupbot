@@ -38,6 +38,7 @@ module Browsers
               DATA_URI,
               visitor_dir)
       rescue Exception => e
+        @@logger.an_event.error "internet explorer #{@version} initialize : #{e.message}"
         raise e
 
       else
@@ -87,7 +88,7 @@ module Browsers
         #file_custom.gsub!(/tool_sandboxing_browser_runtime_path/, Pathname.new(File.join(File.dirname(__FILE__), '..', '..', 'lib', 'sahi.in.co', 'tools', 'sandboxing_browser.rb')).realpath.to_s)
         File.write(file_name, file_custom)
       rescue Exception => e
-        @@logger.an_event.fatal e.message
+        @@logger.an_event.error "internet explorer #{@version} customize config file proxy sahi : #{e.message}"
         raise Error.new(BROWSER_NOT_CUSTOM_FILE, :values => {:browser => name}, :error => e)
 
       else
@@ -139,7 +140,7 @@ module Browsers
         raise BrowserError.new(ARGUMENT_UNDEFINE), "visitor_id undefine" if visitor_id.nil? or visitor_id == ""
 
 
-        window_parameters = "width=#{@width},height=#{@height},channelmode=0,fullscreen=0,left=0,menubar=1,resizable=1,scrollbars=1,status=1,titlebar=1,toolbar=1,top=0"
+        window_parameters = "channelmode=0,fullscreen=0,left=0,menubar=1,resizable=1,scrollbars=1,status=1,titlebar=1,toolbar=1"
         @@logger.an_event.debug "windows parameters : #{window_parameters}"
 
 
@@ -152,6 +153,7 @@ module Browsers
         super(start_page_visit_url, window_parameters)
 
       rescue Exception => e
+        @@logger.an_event.error "#{name} display start page #{start_url} : #{e.message}"
         raise e
 
       else

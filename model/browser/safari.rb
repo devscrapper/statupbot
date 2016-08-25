@@ -57,7 +57,7 @@ module Browsers
       raise StandardError, "start_url is not define" if start_url.nil? or start_url ==""
 
       @@logger.an_event.debug "start_url : #{start_url}"
-      window_parameters = "width=#{@width},height=#{@height},fullscreen=0,left=0,menubar=1,status=1,titlebar=1,top=0"
+      window_parameters = "fullscreen=0,left=0,menubar=1,status=1,titlebar=1"
       @@logger.an_event.debug "windows parameters : #{window_parameters}"
 
       super("_sahi.open_start_page_sa(\"http://127.0.0.1:8080/start_link?method=#{@method_start_page}&url=#{start_url}&visitor_id=#{visitor_id}\",\"#{window_parameters}\")")

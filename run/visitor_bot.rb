@@ -171,6 +171,7 @@ def visitor_is_no_slave(opts, logger)
     exit_status = Timeout::timeout(opts[:max_time_to_live_visit] * 60) {
 
       begin
+
         #---------------------------------------------------------------------------------------------------------------------
         # chargement du fichier definissant la visite
         #---------------------------------------------------------------------------------------------------------------------
@@ -178,6 +179,7 @@ def visitor_is_no_slave(opts, logger)
             website_details,
             visitor_details = Visit.load(opts[:visit_file_name])
 
+        change_visit_state(visit_details[:id], Monitoring::PUBLISHED, logger)
 
         context = ["visit=#{visit_details[:id]}"]
         logger.ndc context

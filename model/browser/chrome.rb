@@ -36,6 +36,7 @@ module Browsers
               NO_REFERER,
               visitor_dir)
       rescue Exception => e
+        @@logger.an_event.error "chrome #{@version} initialize : #{e.message}"
         raise e
 
       else
@@ -98,7 +99,7 @@ module Browsers
         File.write(file_name, file_custom)
 
       rescue Exception => e
-        @@logger.an_event.fatal e.message
+        @@logger.an_event.error "chrome #{@version} customize config file proxy sahi : #{e.message}"
         raise Error.new(BROWSER_NOT_CUSTOM_FILE, :values => {:browser => name}, :error => e)
 
       else
@@ -141,7 +142,7 @@ module Browsers
         raise Error.new(ARGUMENT_UNDEFINE, :values => {:variable => "start_url"}) if start_url.nil? or start_url ==""
         raise Error.new(ARGUMENT_UNDEFINE, :values => {:variable => "visitor_id"}) if visitor_id.nil? or visitor_id == ""
 
-        window_parameters = "width=#{@width},height=#{@height},fullscreen=0,left=0,menubar=1,status=1,titlebar=1,top=0"
+        window_parameters = "menubar=1,status=1,titlebar=1,top=0"
         @@logger.an_event.debug "windows parameters : #{window_parameters}"
 
         encode_start_url = Addressable::URI.encode_component(start_url, Addressable::URI::CharacterClasses::UNRESERVED)

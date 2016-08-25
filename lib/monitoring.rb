@@ -10,6 +10,7 @@ module Monitoring
   PARAMETERS = File.dirname(__FILE__) + "/../../parameter/monitoring_server.yml"
   ENVIRONMENT= File.dirname(__FILE__) + "/../../parameter/environment.yml"
   START = :started
+  PUBLISHED = :published
   SUCCESS = :success
   FAIL = :fail
   OUTOFTIME = :outoftime
